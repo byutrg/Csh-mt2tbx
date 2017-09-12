@@ -20,9 +20,27 @@ namespace Csh_mt2tbx
     /// </summary>
     public partial class MainWindow : Window
     {
+        public string mappingFn = "";
+        public string xmlFn = "";
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void mappingUpload_Click(object sender, RoutedEventArgs e)
+        {
+            mappingFn = Methods.readFile("Mapping");
+        }
+
+        private void xmlUpload_Click(object sender, RoutedEventArgs e)
+        {
+            xmlFn = Methods.readFile("XML");
+        }
+
+        private void convert_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

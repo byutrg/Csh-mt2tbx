@@ -5,8 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Csh_mt2tbx"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="275" Width="525">
     <Grid>
-        
+        <Button Name="mappingUpload" Content="Choose Mapping File" HorizontalAlignment="Left" Margin="85,41,0,0" VerticalAlignment="Top" Width="121" Click="mappingUpload_Click"/>
+        <Label Name="mappingUploadLabel" Content="Waiting for mapping file..." HorizontalAlignment="Left" Margin="229,39,0,0" VerticalAlignment="Top" Width="161"/>
+        <Button Name="xmlUpload" Content="Choose MT XML File" HorizontalAlignment="Left" Margin="85,92,0,0" VerticalAlignment="Top" Width="121" Click="xmlUpload_Click"/>
+        <Label Name="xmlUploadLabel" Content="Waiting for XML file..." HorizontalAlignment="Left" Margin="229,90,0,0" VerticalAlignment="Top" Width="161"/>
+        <Button Name="convert" Content="Convert" HorizontalAlignment="Left" Margin="229,172,0,0" VerticalAlignment="Top" Width="75" Click="convert_Click"/>
+
     </Grid>
 </Window>

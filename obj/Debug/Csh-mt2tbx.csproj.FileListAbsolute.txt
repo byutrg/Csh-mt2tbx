@@ -1,0 +1,15 @@
+C:\Users\jsh226\git\Csh-mt2tbx\bin\Debug\Csh-mt2tbx.exe.config
+C:\Users\jsh226\git\Csh-mt2tbx\bin\Debug\Csh-mt2tbx.exe
+C:\Users\jsh226\git\Csh-mt2tbx\bin\Debug\Csh-mt2tbx.pdb
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.csprojResolveAssemblyReference.cache
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\MainWindow.g.cs
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\App.g.cs
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx_MarkupCompile.cache
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx_MarkupCompile.lref
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\MainWindow.baml
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.g.resources
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh_mt2tbx.Properties.Resources.resources
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.csproj.GenerateResource.Cache
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.csproj.CoreCompileInputs.cache
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.exe
+C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.pdb
