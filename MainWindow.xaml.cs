@@ -40,7 +40,7 @@ namespace Csh_mt2tbx
 
         private void convert_Click(object sender, RoutedEventArgs e)
         {
-
+            Methods.deserializeFile(mappingFn, xmlFn);
         }
     }
 }

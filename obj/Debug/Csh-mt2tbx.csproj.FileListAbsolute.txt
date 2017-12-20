@@ -13,3 +13,10 @@ C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.csproj.GenerateResource.Cach
 C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.csproj.CoreCompileInputs.cache
 C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.exe
 C:\Users\jsh226\git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.pdb
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.csprojResolveAssemblyReference.cache
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\MainWindow.g.cs
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\App.g.cs
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx_MarkupCompile.cache
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx_MarkupCompile.lref
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.exe
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.pdb
