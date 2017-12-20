@@ -151,12 +151,12 @@ namespace Csh_mt2tbx
 
     public class templateSet
     {
-        public List<JObject> conceptMappingTemplates;
-        public List<string> conceptMappingTemplatesKeys;
-        public List<JObject> languageMappingTemplates;
-        public List<string> languageMappingTemplatesKeys;
-        public List<JObject> termMappingTemplates;
-        public List<string> termMappingTemplatesKeys;
+        public List<object> conceptMappingTemplates = new List<object> ();
+        public List<string> conceptMappingTemplatesKeys = new List<string> ();
+        public List<object> languageMappingTemplates = new List<object> ();
+        public List<string> languageMappingTemplatesKeys = new List<string> ();
+        public List<object> termMappingTemplates = new List<object> ();
+        public List<string> termMappingTemplatesKeys = new List<string> ();
         public object[] castObjArray;
         public string key;
         public teaspNoSub teaspNS;
@@ -177,7 +177,7 @@ namespace Csh_mt2tbx
         // This is the Dicitonary that will contain the Mapping Templates Strings and an object (Either a plain teasp or a extendedTeaspStorageManager object).
         // Regardless of what kind of object each Key-Value pair has, type will be determined at runtime and processing will be done then.
 
-        public Dictionary<string, object> grandMasterDictionary;
+        public Dictionary<string, object> grandMasterDictionary = new Dictionary<string, object> ();
 
         // // // //
 
@@ -188,11 +188,11 @@ namespace Csh_mt2tbx
         public string p;
 
 
-        public templateSet(Dictionary<string, JObject> c, Dictionary<string, JObject> l, Dictionary<string, JObject> t)
+        public templateSet(Dictionary<string, object> c, Dictionary<string, object> l, Dictionary<string, object> t)
         {
             foreach(var entry in c)
             {
-                JObject tempUNK1 = entry.Value;
+                object tempUNK1 = entry.Value;
                 conceptMappingTemplates.Add(tempUNK1);
 
                 key = entry.Key;
@@ -200,7 +200,7 @@ namespace Csh_mt2tbx
             }
             foreach(var entry2 in l)
             {
-                JObject tempUNK2 = entry2.Value;
+                object tempUNK2 = entry2.Value;
                 languageMappingTemplates.Add(tempUNK2);
 
                 key = entry2.Key;
@@ -208,12 +208,14 @@ namespace Csh_mt2tbx
             }
             foreach (var entry3 in t)
             {
-                JObject tempUNK3 = entry3.Value;
+                object tempUNK3 = entry3.Value;
                 termMappingTemplates.Add(tempUNK3);
 
                 key = entry3.Key;
                 termMappingTemplatesKeys.Add(key);
             }
+
+            convertTemplateSets();
         }
 
         public Dictionary<string, object> getGrandMasterDictionary()
@@ -226,9 +228,9 @@ namespace Csh_mt2tbx
 
             // Logic: A plain template-set will have only 1 internal array, where those that have value groups will have multiple internal arrays, and the first array will hold value groups
 
-            foreach (JObject j in conceptMappingTemplates)
+            foreach (object j in conceptMappingTemplates)
             {
-                castObjArray = j.ToObject<object[]>(); 
+                castObjArray = (object[])j;
 
                 if (castObjArray.Length == 1) // This is "plain" template set
                 {
@@ -287,9 +289,9 @@ namespace Csh_mt2tbx
 
             }
 
-            foreach (JObject j in languageMappingTemplates)
+            foreach (object j in languageMappingTemplates)
             {
-                castObjArray = j.ToObject<object[]>();
+                castObjArray = (object[])j;
 
                 if (castObjArray.Length == 1)
                 {
@@ -348,9 +350,9 @@ namespace Csh_mt2tbx
 
             }
 
-            foreach (JObject j in termMappingTemplates)
+            foreach (object j in termMappingTemplates)
             {
-                castObjArray = j.ToObject<object[]>();
+                castObjArray = (object[])j;
 
                 if (castObjArray.Length == 1)
                 {
@@ -417,21 +419,21 @@ namespace Csh_mt2tbx
 
     public class oneLevelMapping
     {
-        public Dictionary<string, JObject> cOLvlDictionary;
-        public Dictionary<string, JObject> lOLvlDictionary;
-        public Dictionary<string, JObject> tOLvlDictionary;
+        public Dictionary<string, object> cOLvlDictionary = new Dictionary<string, object> ();
+        public Dictionary<string, object> lOLvlDictionary = new Dictionary<string, object> ();
+        public Dictionary<string, object> tOLvlDictionary = new Dictionary<string, object> ();
         public templateSet ts;
 
         public oneLevelMapping(Dictionary<string, JObject> d)
         {
             JObject tempC = d["concept"];
-            cOLvlDictionary = tempC.ToObject<Dictionary<string, JObject>>();
+            cOLvlDictionary = tempC.ToObject<Dictionary<string, object>>();
 
             JObject tempL = d["language"];
-            lOLvlDictionary = tempL.ToObject<Dictionary<string, JObject>>();
+            lOLvlDictionary = tempL.ToObject<Dictionary<string, object>>();
 
             JObject tempT = d["term"];
-            tOLvlDictionary = tempT.ToObject<Dictionary<string, JObject>>();
+            tOLvlDictionary = tempT.ToObject<Dictionary<string, object>>();
         }
 
         public Dictionary<string, object> beginTemplate()
@@ -447,7 +449,7 @@ namespace Csh_mt2tbx
     {
         public Dictionary<string, JObject> cDefault = new Dictionary<string, JObject> ();
         public oneLevelMapping passDictionary;
-        public Dictionary<string, object> ds;
+        public Dictionary<string, object> ds = new Dictionary<string, object> ();
 
         public cMapClass(JObject c, JObject l, JObject t)
         {
@@ -542,7 +544,7 @@ namespace Csh_mt2tbx
         public JArray objectStorage { get; set; }
         public cMapClass parseCMP;
         public queueOrders QDO;
-        public Dictionary<string, object> dictionaryStorage;
+        public Dictionary<string, object> dictionaryStorage = new Dictionary<string, object> ();
 
         public levelOneClass(string d, string x, JArray cmp)
         {
@@ -589,7 +591,7 @@ namespace Csh_mt2tbx
 
     public class Methods
     {
-        public static List<string> globalOpenTags;
+        public static List<string> globalOpenTags = new List<string> ();
 
         public static int findIndex(List<string[]> ValGrpTemp, string currentContent)
         {
@@ -614,7 +616,8 @@ namespace Csh_mt2tbx
             XmlReaderSettings settingsR = new XmlReaderSettings();
             string d = initialJSON.getDialect(); // ****
             string x = initialJSON.getXCS();    // ****
-            Dictionary<string, object> grandMasterD = initialJSON.getMasterDictionary();
+            Dictionary<string, object> grandMasterD = new Dictionary<string, object> ();
+            grandMasterD = initialJSON.getMasterDictionary();
             string storeAttribute;
             int teaspIndex = 0;
 
@@ -623,7 +626,7 @@ namespace Csh_mt2tbx
             string placement;
             string currentContent;
             string stringSub;
-            Dictionary<string,string> stringOther;
+            Dictionary<string,string> stringOther = new Dictionary<string, string> ();
             string stringValue;
 
             List<string[]> ValGrpTemp;
@@ -653,9 +656,11 @@ namespace Csh_mt2tbx
 
                                         // Print boiler-plate TBX header 
 
+                                        string langDeclaration = "xmllang";
+
                                         writer.WriteStartElement("martif");
                                         writer.WriteAttributeString("type", d); // Need to retrieve dialect from levelOneClass
-                                        writer.WriteAttributeString("xml:lang", "en");
+                                        writer.WriteAttributeString(langDeclaration, "en");
 
                                         writer.WriteStartElement("martifHeader");
                                         writer.WriteStartElement("fileDesc");
@@ -683,11 +688,9 @@ namespace Csh_mt2tbx
                                         writer.WriteStartElement("text");
                                         writer.WriteStartElement("body");
 
-                                        writer.WriteEndElement(); // Closes <body>
-
-                                        writer.WriteEndElement(); // Closes <text>
-
-                                        writer.WriteEndElement(); // Closes <martif>
+                                        globalOpenTags.Add("text");
+                                        globalOpenTags.Add("body");
+                                        globalOpenTags.Add("martif");
 
                                         // End boiler-plate TBX header
 

@@ -20,3 +20,12 @@ C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx_MarkupCompile.ca
 C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx_MarkupCompile.lref
 C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.exe
 C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.pdb
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\bin\Debug\Csh-mt2tbx.exe.config
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\bin\Debug\Csh-mt2tbx.exe
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\bin\Debug\Csh-mt2tbx.pdb
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\bin\Debug\Newtonsoft.Json.xml
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\MainWindow.baml
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.g.resources
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh_mt2tbx.Properties.Resources.resources
+C:\Users\Kaden Carr\Desktop\Git\Csh-mt2tbx\obj\Debug\Csh-mt2tbx.csproj.GenerateResource.Cache
