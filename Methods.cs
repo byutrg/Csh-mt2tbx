@@ -40,10 +40,10 @@ namespace Csh_mt2tbx
     public class extendedTeaspStorageManager
     {
         public List<string[]> valueGroupCollection; // Each string[] will correspond with the teasp in the same position
-        public List<teaspWithSub> correspondingValGrpTeasps; // Every one of these will have substitutions, and therefore the default will not be in this list
+        public List<object> correspondingValGrpTeasps; // Every one of these will have substitutions, and therefore the default will not be in this list
         public teaspNoSub defaultTeaspSub;
 
-        public extendedTeaspStorageManager(List<string[]> ls, List<teaspWithSub> lt, teaspNoSub dt)
+        public extendedTeaspStorageManager(List<string[]> ls, List<object> lt, teaspNoSub dt)
         {
             valueGroupCollection = ls;
             correspondingValGrpTeasps = lt;
@@ -55,7 +55,7 @@ namespace Csh_mt2tbx
             return valueGroupCollection;
         }
 
-        public List<teaspWithSub> getCorrespondingValGrpTeasps()
+        public List<object> getCorrespondingValGrpTeasps()
         {
             return correspondingValGrpTeasps;
         }
@@ -110,7 +110,7 @@ namespace Csh_mt2tbx
     {
         public string target;
         public string elementOrAttributes;
-        public Dictionary<string,string> substitution;
+        public Dictionary<string,string> substitution = new Dictionary<string, string> ();
         public string placement;
 
         public teaspWithSub(string t, string ea, Dictionary<string,string> s, string p)
@@ -166,8 +166,8 @@ namespace Csh_mt2tbx
         public int lKeyCounter = 0;
         public int tKeyCounter = 0;
         public string[] valGrp;
-        public List<string[]> ls;
-        public List<teaspWithSub> lt;
+        public List<string[]> ls = new List<string[]> ();
+        public List<object> lt = new List<object> ();
         public teaspNoSub dt;
         public extendedTeaspStorageManager ETSM;
 
@@ -225,57 +225,135 @@ namespace Csh_mt2tbx
 
         public void convertTemplateSets()
         {
-
             // Logic: A plain template-set will have only 1 internal array, where those that have value groups will have multiple internal arrays, and the first array will hold value groups
 
-            foreach (object j in conceptMappingTemplates)
+            foreach (JArray j in conceptMappingTemplates)
             {
-                castObjArray = (object[])j;
+                castObjArray = (object[])j.ToObject(typeof(object[]));
 
                 if (castObjArray.Length == 1) // This is "plain" template set
                 {
-                    object[] temp = (object[])castObjArray[0]; //  Grabs onto plain teaps array
-                    object[] teasp = (object[])temp[0]; // We now have access to the info of the teasp! Cannot be a plain string[] because the substitution may still be an array.
+                    JArray tempJA = (JArray)castObjArray[0];
+                    object[] teasp = (object[])tempJA.ToObject(typeof(object[]));
+                    JArray plainTeasp = (JArray)teasp[0];
 
-                    t = (string)teasp[0];
-                    ea = (string)teasp[1];
-                    string s = (string)teasp[2]; // It is safe to assume it will be NULL, only Teasps that are sprung from value-groups with have subs and because length is only 1, we know there are none
-                    p = (string)teasp[3];
-        
-                    teaspNS = new teaspNoSub(t, ea, s, p);
-                    grandMasterDictionary.Add(conceptMappingTemplatesKeys[cKeyCounter], teaspNS);
+                    t = (string)plainTeasp[0].ToObject(typeof(string));
+                    ea = (string)plainTeasp[1].ToObject(typeof(string));
+                    p = (string)plainTeasp[3].ToObject(typeof(string));
+
+                    // // //
+                    JToken castTest = (JToken)plainTeasp[2].ToObject(typeof(JToken));
+                    string castTestString = "";
+
+
+                    try
+                    {
+                        castTestString = (string)castTest.ToObject(typeof(string));
+                    }
+                    catch (Exception e)
+                    {
+                        handler = 0;
+                    }
+
+                    try
+                    {
+                        Dictionary<string, string> castTestDictionary = (Dictionary<string, string>)castTest.ToObject(typeof(Dictionary<string, string>));
+                    }
+                    catch (Exception e)
+                    {
+                        handler = 1;
+                    }
+
+                    // // // Check casting here
+
+                    if (handler == 0)
+                    {
+                        Dictionary<string, string> exceptionSub = (Dictionary<string, string>)plainTeasp[2].ToObject(typeof(Dictionary<string, string>));
+                        var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
+
+                        grandMasterDictionary.Add(conceptMappingTemplatesKeys[cKeyCounter], teaspMy);
+                    }
+                    else if (handler == 1)
+                    {
+                        string s = (string)plainTeasp[2].ToObject(typeof(string));
+                        var teaspMy = new teaspNoSub(t, ea, s, p);
+
+                        grandMasterDictionary.Add(conceptMappingTemplatesKeys[cKeyCounter], teaspMy);
+                    }
+
+                    // // //
+
                     cKeyCounter++;
 
                 }
                 else if (castObjArray.Length != 0 && castObjArray.Length > 1) // This is a template set with Value groups 
                 {
 
-                    object[] temp = (object[])castObjArray[0]; // This will have the default Teasp and subsequent value groups
-                    object[] deftsp = (object[])temp[0]; // Grab the default teasp
-                    t = (string)deftsp[0];
-                    ea = (string)deftsp[1];
-                    string s = (string)deftsp[2]; // As the default, we know it will always be NULL
-                    p = (string)deftsp[3];
+                    JArray temp = (JArray)castObjArray[0]; // This will have the default Teasp and subsequent value groups
+                    object[] deftsp = (object[])temp.ToObject(typeof(object[])); // Grab the default teasp
+                    JArray defaultTsp = (JArray)deftsp[0];
+
+                    t = (string)defaultTsp[0].ToObject(typeof(string));
+                    ea = (string)defaultTsp[1].ToObject(typeof(string));
+                    string s = (string)defaultTsp[2].ToObject(typeof(string));
+                    p = (string)defaultTsp[3].ToObject(typeof(string));
 
                     teaspNS = new teaspNoSub(t, ea, s, p); // This is now ready to give to the extendedTeaspStorageManager
                     dt = teaspNS;
-
-                    temp = temp.Skip(1).ToArray(); // We dont want the first array, it is its own teasp, this array now just has value groups
-                    foreach(string[] st in temp)
+                    
+                    deftsp = deftsp.Skip(1).ToArray(); // We dont want the first array, it is its own teasp, this array now just has value groups
+                    foreach(JArray st in deftsp)
                     {
-                        ls.Add(st); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
+                        string[] singleValGrp = (string[])st.ToObject(typeof(string[]));
+                        ls.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
                     }
                     
                     castObjArray = castObjArray.Skip(1).ToArray(); // We dont want the first array, because it will be handled seperately (above)
-                    foreach (object[] tsp in castObjArray) // This handles the teasps that correspond with each value-group
+                    foreach (JArray tsp in castObjArray) // This handles the teasps that correspond with each value-group
                     {
-                        t = (string)tsp[0];
-                        ea = (string)tsp[1];
-                        Dictionary<string, string> ds = (Dictionary<string, string>)tsp[2]; // If there were no substitution we wouldnt be here right now!
-                        p = (string)tsp[3];
+                        t = (string)tsp[0].ToObject(typeof(string));
+                        ea = (string)tsp[1].ToObject(typeof(string));
+                        p = (string)tsp[3].ToObject(typeof(string));
 
-                        teaspWS = new teaspWithSub(t, ea, ds, p);
-                        lt.Add(teaspWS);
+                        // // //
+                        JToken castTest = (JToken)tsp[2].ToObject(typeof(JToken));
+                        string castTestString = "";
+
+
+                        try
+                        {
+                            castTestString = (string)castTest.ToObject(typeof(string));
+                        }
+                        catch (Exception e)
+                        {
+                            handler = 0;
+                        }
+
+                        try
+                        {
+                            Dictionary<string, string> castTestDictionary = (Dictionary<string, string>)castTest.ToObject(typeof(Dictionary<string, string>));
+                        }
+                        catch (Exception e)
+                        {
+                            handler = 1;
+                        }
+
+                        // // // Check casting here
+
+                        if (handler == 0)
+                        {
+                            Dictionary<string, string> exceptionSub = (Dictionary<string, string>)tsp[2].ToObject(typeof(Dictionary<string, string>));
+                            var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
+
+                            lt.Add(teaspMy);
+                        }
+                        else if (handler == 1)
+                        {
+                            string str = (string)tsp[2].ToObject(typeof(string));
+                            var teaspMy = new teaspNoSub(t, ea, s, p);
+
+                            lt.Add(teaspMy);
+                        }
                     } // When this is finished, lt will now have all the teasps that correspond to each value group ready
 
                     // We are now ready to build the extendedTeaspStorageManager
@@ -289,55 +367,135 @@ namespace Csh_mt2tbx
 
             }
 
-            foreach (object j in languageMappingTemplates)
+            foreach (JArray j in languageMappingTemplates)
             {
-                castObjArray = (object[])j;
+                castObjArray = (object[])j.ToObject(typeof(object[]));
 
                 if (castObjArray.Length == 1)
                 {
-                    object[] temp = (object[])castObjArray[0];
-                    object[] teasp = (object[])temp[0];
+                    JArray tempJA = (JArray)castObjArray[0];
+                    object[] teasp = (object[])tempJA.ToObject(typeof(object[]));
+                    JArray plainTeasp = (JArray)teasp[0];
 
-                    t = (string)teasp[0];
-                    ea = (string)teasp[1];
-                    string s = (string)teasp[2];
-                    p = (string)teasp[3];
+                    t = (string)plainTeasp[0].ToObject(typeof(string));
+                    ea = (string)plainTeasp[1].ToObject(typeof(string));
+                    p = (string)plainTeasp[3].ToObject(typeof(string));
 
-                    teaspNS = new teaspNoSub(t, ea, s, p);
-                    grandMasterDictionary.Add(languageMappingTemplatesKeys[lKeyCounter], teaspNS);
+                    // // //
+                    JToken castTest = (JToken)plainTeasp[2].ToObject(typeof(JToken));
+                    string castTestString = "";
+
+
+                    try
+                    {
+                        castTestString = (string)castTest.ToObject(typeof(string));
+                    }
+                    catch (Exception e)
+                    {
+                        handler = 0;
+                    }
+
+                    try
+                    {
+                        Dictionary<string, string> castTestDictionary = (Dictionary<string, string>)castTest.ToObject(typeof(Dictionary<string, string>));
+                    }
+                    catch (Exception e)
+                    {
+                        handler = 1;
+                    }
+
+                    // // // Check casting here
+
+                    if (handler == 0)
+                    {
+                        Dictionary<string, string> exceptionSub = (Dictionary<string, string>)plainTeasp[2].ToObject(typeof(Dictionary<string, string>));
+                        var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
+
+                        grandMasterDictionary.Add(languageMappingTemplatesKeys[lKeyCounter], teaspMy);
+                    }
+                    else if (handler == 1)
+                    {
+                        string s = (string)plainTeasp[2].ToObject(typeof(string)); 
+                        var teaspMy = new teaspNoSub(t, ea, s, p);
+
+                        grandMasterDictionary.Add(languageMappingTemplatesKeys[lKeyCounter], teaspMy);
+                    }
+                    
+                    // // //
+
                     lKeyCounter++;
 
                 }
                 else if (castObjArray.Length != 0 && castObjArray.Length > 1) 
                 {
 
-                    object[] temp = (object[])castObjArray[0]; 
-                    object[] deftsp = (object[])temp[0]; 
-                    t = (string)deftsp[0];
-                    ea = (string)deftsp[1];
-                    string s = (string)deftsp[2]; 
-                    p = (string)deftsp[3];
+                    JArray temp = (JArray)castObjArray[0]; // This will have the default Teasp and subsequent value groups
+                    object[] deftsp = (object[])temp.ToObject(typeof(object[])); // Grab the default teasp
+                    JArray defaultTsp = (JArray)deftsp[0];
 
-                    teaspNS = new teaspNoSub(t, ea, s, p);
+                    t = (string)defaultTsp[0].ToObject(typeof(string));
+                    ea = (string)defaultTsp[1].ToObject(typeof(string));
+                    string s = (string)defaultTsp[2].ToObject(typeof(string));
+                    p = (string)defaultTsp[3].ToObject(typeof(string));
+
+                    teaspNS = new teaspNoSub(t, ea, s, p); // This is now ready to give to the extendedTeaspStorageManager
                     dt = teaspNS;
 
-                    temp = temp.Skip(1).ToArray(); 
-                    foreach (string[] st in temp)
+                    deftsp = deftsp.Skip(1).ToArray(); // We dont want the first array, it is its own teasp, this array now just has value groups
+                    foreach (JArray st in deftsp)
                     {
-                        ls.Add(st); 
+                        string[] singleValGrp = (string[])st.ToObject(typeof(string[]));
+                        ls.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
                     }
 
-                    castObjArray = castObjArray.Skip(1).ToArray(); 
-                    foreach (object[] tsp in castObjArray) 
+                    castObjArray = castObjArray.Skip(1).ToArray(); // We dont want the first array, because it will be handled seperately (above)
+                    foreach (JArray tsp in castObjArray) // This handles the teasps that correspond with each value-group
                     {
-                        t = (string)tsp[0];
-                        ea = (string)tsp[1];
-                        Dictionary<string, string> ds = (Dictionary<string, string>)tsp[2];
-                        p = (string)tsp[3];
+                        t = (string)tsp[0].ToObject(typeof(string));
+                        ea = (string)tsp[1].ToObject(typeof(string));
+                        p = (string)tsp[3].ToObject(typeof(string));
 
-                        teaspWS = new teaspWithSub(t, ea, ds, p);
-                        lt.Add(teaspWS);
-                    } 
+                        // // //
+                        JToken castTest = (JToken)tsp[2].ToObject(typeof(JToken));
+                        string castTestString = "";
+
+
+                        try
+                        {
+                            castTestString = (string)castTest.ToObject(typeof(string));
+                        }
+                        catch (Exception e)
+                        {
+                            handler = 0;
+                        }
+
+                        try
+                        {
+                            Dictionary<string, string> castTestDictionary = (Dictionary<string, string>)castTest.ToObject(typeof(Dictionary<string, string>));
+                        }
+                        catch (Exception e)
+                        {
+                            handler = 1;
+                        }
+
+                        // // // Check casting here
+
+                        if (handler == 0)
+                        {
+                            Dictionary<string, string> exceptionSub = (Dictionary<string, string>)tsp[2].ToObject(typeof(Dictionary<string, string>));
+                            var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
+
+                            lt.Add(teaspMy);
+                        }
+                        else if (handler == 1)
+                        {
+                            string str = (string)tsp[2].ToObject(typeof(string));
+                            var teaspMy = new teaspNoSub(t, ea, s, p);
+
+                            lt.Add(teaspMy);
+                        }
+
+                    } // When this is finished, lt will now have all the teasps that correspond to each value group ready
 
                     // We are now ready to build the extendedTeaspStorageManager
 
@@ -350,55 +508,133 @@ namespace Csh_mt2tbx
 
             }
 
-            foreach (object j in termMappingTemplates)
+            foreach (JArray j in termMappingTemplates)
             {
-                castObjArray = (object[])j;
+                castObjArray = (object[])j.ToObject(typeof(object[]));
 
                 if (castObjArray.Length == 1)
                 {
-                    object[] temp = (object[])castObjArray[0];
-                    object[] teasp = (object[])temp[0];
+                    JArray tempJA = (JArray)castObjArray[0];
+                    object[] teasp = (object[])tempJA.ToObject(typeof(object[]));
+                    JArray plainTeasp = (JArray)teasp[0];
 
-                    t = (string)teasp[0];
-                    ea = (string)teasp[1];
-                    string s = (string)teasp[2];
-                    p = (string)teasp[3];
+                    t = (string)plainTeasp[0].ToObject(typeof(string));
+                    ea = (string)plainTeasp[1].ToObject(typeof(string));
+                    p = (string)plainTeasp[3].ToObject(typeof(string));
 
-                    teaspNS = new teaspNoSub(t, ea, s, p);
-                    grandMasterDictionary.Add(termMappingTemplatesKeys[tKeyCounter], teaspNS);
+                    // // //
+                    JToken castTest = (JToken)plainTeasp[2].ToObject(typeof(JToken));
+                    string castTestString = "";
+
+
+                    try
+                    {
+                        castTestString = (string)castTest.ToObject(typeof(string));
+                    }
+                    catch (Exception e)
+                    {
+                        handler = 0;
+                    }
+
+                    try
+                    {
+                        Dictionary<string, string> castTestDictionary = (Dictionary<string, string>)castTest.ToObject(typeof(Dictionary<string, string>));
+                    }
+                    catch (Exception e)
+                    {
+                        handler = 1;
+                    }
+
+                    // // // Check casting here
+
+                    if (handler == 0)
+                    {
+                        Dictionary<string, string> exceptionSub = (Dictionary<string, string>)plainTeasp[2].ToObject(typeof(Dictionary<string, string>));
+                        var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
+
+                        grandMasterDictionary.Add(termMappingTemplatesKeys[tKeyCounter], teaspMy);
+                    }
+                    else if (handler == 1)
+                    {
+                        string s = (string)plainTeasp[2].ToObject(typeof(string));
+                        var teaspMy = new teaspNoSub(t, ea, s, p);
+
+                        grandMasterDictionary.Add(termMappingTemplatesKeys[tKeyCounter], teaspMy);
+                    }
+
+                    // // //
                     tKeyCounter++;
 
                 }
                 else if (castObjArray.Length != 0 && castObjArray.Length > 1)
                 {
 
-                    object[] temp = (object[])castObjArray[0];
-                    object[] deftsp = (object[])temp[0];
-                    t = (string)deftsp[0];
-                    ea = (string)deftsp[1];
-                    string s = (string)deftsp[2];
-                    p = (string)deftsp[3];
+                    JArray temp = (JArray)castObjArray[0]; // This will have the default Teasp and subsequent value groups
+                    object[] deftsp = (object[])temp.ToObject(typeof(object[])); // Grab the default teasp
+                    JArray defaultTsp = (JArray)deftsp[0];
 
-                    teaspNS = new teaspNoSub(t, ea, s, p);
+                    t = (string)defaultTsp[0].ToObject(typeof(string));
+                    ea = (string)defaultTsp[1].ToObject(typeof(string));
+                    string s = (string)defaultTsp[2].ToObject(typeof(string));
+                    p = (string)defaultTsp[3].ToObject(typeof(string));
+
+                    teaspNS = new teaspNoSub(t, ea, s, p); // This is now ready to give to the extendedTeaspStorageManager
                     dt = teaspNS;
 
-                    temp = temp.Skip(1).ToArray();
-                    foreach (string[] st in temp)
+                    deftsp = deftsp.Skip(1).ToArray(); // We dont want the first array, it is its own teasp, this array now just has value groups
+                    foreach (JArray st in deftsp)
                     {
-                        ls.Add(st);
+                        string[] singleValGrp = (string[])st.ToObject(typeof(string[]));
+                        ls.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
                     }
 
-                    castObjArray = castObjArray.Skip(1).ToArray();
-                    foreach (object[] tsp in castObjArray)
+                    castObjArray = castObjArray.Skip(1).ToArray(); // We dont want the first array, because it will be handled seperately (above)
+                    foreach (JArray tsp in castObjArray) // This handles the teasps that correspond with each value-group
                     {
-                        t = (string)tsp[0];
-                        ea = (string)tsp[1];
-                        Dictionary<string, string> ds = (Dictionary<string, string>)tsp[2];
-                        p = (string)tsp[3];
+                        t = (string)tsp[0].ToObject(typeof(string));
+                        ea = (string)tsp[1].ToObject(typeof(string));
+                        p = (string)tsp[3].ToObject(typeof(string));
 
-                        teaspWS = new teaspWithSub(t, ea, ds, p);
-                        lt.Add(teaspWS);
-                    }
+                        // // //
+                        JToken castTest = (JToken)tsp[2].ToObject(typeof(JToken));
+                        string castTestString = "";
+
+
+                        try
+                        {
+                            castTestString = (string)castTest.ToObject(typeof(string));
+                        }
+                        catch (Exception e)
+                        {
+                            handler = 0;
+                        }
+
+                        try
+                        {
+                            Dictionary<string, string> castTestDictionary = (Dictionary<string, string>)castTest.ToObject(typeof(Dictionary<string, string>));
+                        }
+                        catch (Exception e)
+                        {
+                            handler = 1;
+                        }
+
+                        // // // Check casting here
+
+                        if (handler == 0)
+                        {
+                            Dictionary<string, string> exceptionSub = (Dictionary<string, string>)tsp[2].ToObject(typeof(Dictionary<string, string>));
+                            var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
+
+                            lt.Add(teaspMy);
+                        }
+                        else if (handler == 1)
+                        {
+                            string str = (string)tsp[2].ToObject(typeof(string));
+                            var teaspMy = new teaspNoSub(t, ea, s, p);
+
+                            lt.Add(teaspMy);
+                        }
+                    } // When this is finished, lt will now have all the teasps that correspond to each value group ready
 
                     // We are now ready to build the extendedTeaspStorageManager
 
@@ -591,7 +827,6 @@ namespace Csh_mt2tbx
 
     public class Methods
     {
-        public static List<string> globalOpenTags = new List<string> ();
 
         public static int findIndex(List<string[]> ValGrpTemp, string currentContent)
         {
@@ -612,7 +847,9 @@ namespace Csh_mt2tbx
 
         public static void startXMLImport(FileStream inXML, FileStream outXML, levelOneClass initialJSON)
         {
-            XmlWriterSettings settingW = new XmlWriterSettings() { Indent = true, IndentChars = " " };
+            XmlWriterSettings settingW = new XmlWriterSettings() { Indent = true, IndentChars = " "};
+            // We dont hope for a fragment, but I need this for debugging
+            settingW.ConformanceLevel = ConformanceLevel.Auto;
             XmlReaderSettings settingsR = new XmlReaderSettings();
             string d = initialJSON.getDialect(); // ****
             string x = initialJSON.getXCS();    // ****
@@ -621,21 +858,26 @@ namespace Csh_mt2tbx
             string storeAttribute;
             int teaspIndex = 0;
 
-            string target;
-            string element;
-            string placement;
-            string currentContent;
-            string stringSub;
+            string target = "";
+            string element = "";
+            string placement = "";
+            string currentContent = "";
+            string stringSub = "";
             Dictionary<string,string> stringOther = new Dictionary<string, string> ();
-            string stringValue;
+            string stringValue = "";
 
             List<string[]> ValGrpTemp;
-            List<teaspWithSub> correspondTemp;
+            List<object> correspondTemp;
             teaspNoSub defaultTeaspSub;
+            teaspNoSub castWithout;
+            teaspWithSub castWith;
+            List<string> xrefPairs = new List<string>();
 
             string storeAtt;
+            string storeSecondAtt;
             string storeContent;
             string storeDateContent;
+            string extraContent;
 
 
             using (XmlReader reader = XmlReader.Create(inXML, settingsR))
@@ -645,203 +887,450 @@ namespace Csh_mt2tbx
                     writer.WriteStartDocument();
                     while (reader.Read())
                     {
-                        if (reader.IsStartElement())
+                        switch (reader.NodeType)
                         {
-                            switch (reader.NodeType)
-                            {
-                                case XmlNodeType.Element:
+                            case XmlNodeType.Element:
 
-                                    if (reader.Name == "mtf")
+                                if (reader.Name == "mtf")
+                                {
+
+                                    // Print boiler-plate TBX header 
+                                    string langDeclaration = "xmllang";
+
+                                    writer.WriteStartElement("martif");
+                                    writer.WriteAttributeString("type", d); // Need to retrieve dialect from levelOneClass
+                                    writer.WriteAttributeString(langDeclaration, "en");
+
+                                    writer.WriteStartElement("martifHeader");
+                                    writer.WriteStartElement("fileDesc");
+                                    writer.WriteStartElement("sourceDesc");
+                                    writer.WriteStartElement("p");
+                                    writer.WriteString("Auto-converted from Multiterm XML");
+
+                                    writer.WriteEndElement(); // Closes <p>
+
+                                    writer.WriteEndElement(); // Closes <sourceDesc>
+
+                                    writer.WriteEndElement(); // Closes <fileDesc>
+
+                                    writer.WriteStartElement("encodingDesc");
+                                    writer.WriteStartElement("p");
+                                    writer.WriteAttributeString("type", "DCSName");
+                                    writer.WriteString(x); // Need to retrieve XCS from levelOneClass
+
+                                    writer.WriteEndElement(); // Closes <p>
+
+                                    writer.WriteEndElement(); // Closes <encodingDesc>
+
+                                    writer.WriteEndElement(); // Closes <martifHeader>
+
+                                    writer.WriteStartElement("text");
+                                    writer.WriteStartElement("body");
+
+                                    // End boiler-plate TBX header
+
+                                    break;
+
+                                }
+
+                                if (reader.HasAttributes && reader.GetAttribute("multimedia") != null)
+                                {
+                                    writer.WriteStartElement(reader.Name);
+                                    writer.WriteAttributeString("multimedia", reader.GetAttribute("multimedia"));
+                                    break;
+                                }
+
+                                if (reader.Name == "language") // I think we'll need a special call for Locale-codes that are lacking
+                                {
+                                    storeAtt = reader.GetAttribute("lang");
+                                    storeSecondAtt = reader.GetAttribute("type");
+                                    writer.WriteStartElement(reader.Name); // NOT DONE
+                                    writer.WriteAttributeString("lang", storeAtt);
+                                    writer.WriteAttributeString("type", storeSecondAtt);
+                                    writer.WriteString("TEMPORARY CONTENT");
+                                    break;
+                                }
+
+                                if (reader.Name != "mtf" && reader.Name != "transac" && reader.HasAttributes) // We have found a winner!
+                                {
+                                    storeAttribute = reader.GetAttribute("type");
+                                    if(grandMasterD.ContainsKey(storeAttribute)) // Time to process
                                     {
-
-                                        // Print boiler-plate TBX header 
-
-                                        string langDeclaration = "xmllang";
-
-                                        writer.WriteStartElement("martif");
-                                        writer.WriteAttributeString("type", d); // Need to retrieve dialect from levelOneClass
-                                        writer.WriteAttributeString(langDeclaration, "en");
-
-                                        writer.WriteStartElement("martifHeader");
-                                        writer.WriteStartElement("fileDesc");
-                                        writer.WriteStartElement("sourceDesc");
-                                        writer.WriteStartElement("p");
-                                        writer.WriteString("Auto-converted from Multiterm XML");
-
-                                        writer.WriteEndElement(); // Closes <p>
-
-                                        writer.WriteEndElement(); // Closes <sourceDesc>
-
-                                        writer.WriteEndElement(); // Closes <fileDesc>
-
-                                        writer.WriteStartElement("encodingDesc");
-                                        writer.WriteStartElement("p");
-                                        writer.WriteAttributeString("type", "DCSName");
-                                        writer.WriteString(x); // Need to retrieve XCS from levelOneClass
-
-                                        writer.WriteEndElement(); // Closes <p>
-
-                                        writer.WriteEndElement(); // Closes <encodingDesc>
-
-                                        writer.WriteEndElement(); // Closes <martifHeader>
-
-                                        writer.WriteStartElement("text");
-                                        writer.WriteStartElement("body");
-
-                                        globalOpenTags.Add("text");
-                                        globalOpenTags.Add("body");
-                                        globalOpenTags.Add("martif");
-
-                                        // End boiler-plate TBX header
-
-                                        break;
-
-                                    }
-
-                                    if (reader.Name == "language") // I think we'll need a special call for Local-codes that are lacking
-                                    {
-                                        storeAtt = reader.GetAttribute("lang");
-                                        writer.WriteStartElement(reader.Name); // NOT DONE
-                                        writer.WriteAttributeString("lang", storeAtt);
-                                        writer.WriteEndElement();
-                                        break;
-                                    }
-
-                                    if (reader.Name != "mtf" && reader.Name != "transac" && reader.HasAttributes) // We have found a winner!
-                                    {
-                                        storeAttribute = reader.GetAttribute("type");
-                                        if(grandMasterD.ContainsKey(storeAttribute)) // Time to process
+                                        reader.HasChild
+                                        string saveNodeName = reader.Name;
+                                        try
                                         {
                                             currentContent = reader.ReadElementContentAsString();
-                                            // Determine typeof and cast
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            // The next element is therefore another element, probably xref inside a descrip
 
-                                            if (grandMasterD[storeAttribute].GetType() == typeof(teaspNoSub)) // No Value Groups
+                                            // The reader found the xref, and will now grab the xref's content
+                                            string storeAftermath = reader.ReadElementContentAsString();
+                                            // The reader jumps the xref end tag (why?) and now grab the remaining content of descrip, 
+                                            // and reader will end on descrip end tag
+                                            string storeDescripExtra = reader.ReadContentAsString();
+
+                                            // There are x number of xrefs that can be attached to this one descrip, so we will have 
+                                            // to keep checking if the next element is still an xref
+
+                                            while (reader.Name == "xref")
                                             {
-                                                teaspNoSub temp = (teaspNoSub)grandMasterD[storeAttribute];
-                                                // From here we can just grab and go
-                                                target = temp.getTarget();
-                                                element = temp.getElementOrAttribute();
-                                                stringSub = temp.getSubstitution();
-                                                placement = temp.getPlacement();
+                                                string storeMoreA = reader.ReadElementContentAsString();
+                                                string storeMoreB = reader.ReadContentAsString();
+                                                string storeMoreX = storeMoreA + storeMoreB;
+                                                xrefPairs.Add(storeMoreX);
+                                            }
 
-                                                writer.WriteStartElement(reader.Name); // Write the Element currently beind handled
+                                            //Concatenate the two
+                                            storeAftermath = storeAftermath + storeDescripExtra;
+                                            writer.WriteStartElement("admin");
+                                            writer.WriteAttributeString("type", "source");
+                                            extraContent = "";
+                                            if (xrefPairs.Count >= 1) // Add the extra content if applicable from xrefs
+                                            {
+                                                foreach (string s in xrefPairs)
+                                                {
+                                                    extraContent = extraContent + s;
+                                                }
+                                            }
+                                            storeAftermath = storeAftermath + extraContent;
+
+                                            // For some reason, sometimes the last string has a new-line character on the tail end, throwing off the closing admin tag
+                                            string checkNewLine = storeAftermath.Substring(storeAftermath.Length - 1);
+                                            if (checkNewLine == "\n")
+                                            {
+                                                storeAftermath = storeAftermath.Substring(0, storeAftermath.Length - 1);
+                                            } 
+
+                                            writer.WriteString(storeAftermath);
+                                            writer.WriteEndElement();
+                                            xrefPairs.Clear();
+                                            break;
+                                        }
+
+                                        // Determine typeof and cast
+
+                                        if (grandMasterD[storeAttribute].GetType() == typeof(teaspNoSub)) // No Value Groups
+                                        {
+                                            teaspNoSub temp = (teaspNoSub)grandMasterD[storeAttribute];
+                                            // From here we can just grab and go
+                                            target = temp.getTarget();
+                                            element = temp.getElementOrAttribute();
+                                            stringSub = temp.getSubstitution();
+                                            placement = temp.getPlacement();
+
+                                            // The node name may very well be the same, but for safety, we will check what element is supposed to hold the info in question
+                                            Match match1 = Regex.Match(element, @"<\w([^\s]+)");
+                                            string hold = match1.Groups[0].Value;
+                                            hold = hold.Substring(1);
+
+                                            if(hold != saveNodeName)
+                                            {
+                                                saveNodeName = hold;
+                                            }
+
+
+                                            writer.WriteStartElement(saveNodeName); // Write the Element currently beind handled
+                                            // Grab the desired section of the attribute out of element with regex!
+                                            Match match2 = Regex.Match(element, @"'([^']*)");
+                                            string att = match2.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
+
+                                            writer.WriteAttributeString("type", att); // Give it its attributes
+                                            writer.WriteString(currentContent);
+
+                                            // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
+                                            writer.WriteEndElement();
+                                        }
+                                        if (grandMasterD[storeAttribute].GetType() == typeof(teaspWithSub))
+                                        {
+                                            teaspWithSub temp = (teaspWithSub)grandMasterD[storeAttribute];
+                                            // From here we can just grab and go
+                                            target = temp.getTarget();
+                                            element = temp.getElementOrAttribute();
+                                            stringOther = temp.getSubstitution();
+                                            placement = temp.getPlacement();
+                                            stringValue = stringOther[currentContent];
+
+                                            // The node name may very well be the same, but for safety, we will check what element is supposed to hold the info in question
+                                            Match match1 = Regex.Match(element, @"<\w([^\s]+)");
+                                            string hold = match1.Groups[0].Value;
+                                            hold = hold.Substring(1);
+
+                                            if (hold != saveNodeName)
+                                            {
+                                                saveNodeName = hold;
+                                            }
+
+                                            writer.WriteStartElement(saveNodeName); // Write the Element currently beind handled
+                                            // Grab the desired section of the attribute out of element with regex!
+                                            Match match2 = Regex.Match(element, @"'([^']*)");
+                                            string att = match2.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
+
+                                            writer.WriteAttributeString("type", att); // Give it its attributes
+                                            writer.WriteString(stringValue);
+
+                                            // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
+                                            writer.WriteEndElement();
+                                        }
+                                        if (grandMasterD[storeAttribute].GetType() == typeof(extendedTeaspStorageManager)) // Has Value Groups
+                                        {
+                                            extendedTeaspStorageManager tempExt = (extendedTeaspStorageManager)grandMasterD[storeAttribute];
+                                            // Step 1: Check each string[] in the List<string[]> for the content of the element
+                                            ValGrpTemp = tempExt.getValueGroupCollection();
+                                            correspondTemp = tempExt.getCorrespondingValGrpTeasps();
+
+                                            teaspIndex = findIndex(ValGrpTemp, currentContent);
+
+                                            // Step 2: Either fetch the teasp or use the default
+                                            if (teaspIndex >= 0)
+                                            {
+                                                object fetchTeasp = correspondTemp[teaspIndex];
+
+                                                if (fetchTeasp is teaspWithSub)
+                                                {
+                                                    castWith = (teaspWithSub)fetchTeasp;
+                                                    target = castWith.getTarget();
+                                                    element = castWith.getElementOrAttribute();
+                                                    stringOther = castWith.getSubstitution();
+                                                    placement = castWith.getPlacement();
+                                                    stringValue = stringOther[currentContent];
+                                                }
+                                                else if (fetchTeasp is teaspNoSub)
+                                                {
+                                                    castWithout = (teaspNoSub)fetchTeasp;
+                                                    target = castWithout.getTarget();
+                                                    element = castWithout.getElementOrAttribute();
+                                                    stringValue = castWithout.getSubstitution();
+                                                    placement = castWithout.getPlacement();
+                                                }
+
+                                                // The node name may very well be the same, but for safety, we will check what element is supposed to hold the info in question
+                                                Match match1 = Regex.Match(element, @"<\w([^\s]+)");
+                                                string hold = match1.Groups[0].Value;
+                                                hold = hold.Substring(1);
+
+                                                if (hold != saveNodeName)
+                                                {
+                                                    saveNodeName = hold;
+                                                }
+
+                                                // Ready to Write!
+                                                writer.WriteStartElement(saveNodeName); // Write the Element currently beind handled
+                                                // Grab the desired section of the attribute out of element with regex!
+                                                Match match = Regex.Match(element, @"'([^']*)");
+                                                string att = match.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
+
+                                                writer.WriteAttributeString("type", att); // Give it its attributes
+                                                writer.WriteString(stringValue);
+
+                                                // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
+                                                writer.WriteEndElement();
+                                            }
+                                            else if (teaspIndex == -1)
+                                            {
+                                                defaultTeaspSub = tempExt.getDefaultTeaspSub();
+                                                target = defaultTeaspSub.getTarget();
+                                                element = defaultTeaspSub.getElementOrAttribute();
+                                                stringSub = defaultTeaspSub.getSubstitution();
+                                                placement = defaultTeaspSub.getPlacement();
+
+                                                // The node name may very well be the same, but for safety, we will check what element is supposed to hold the info in question
+                                                Match match1 = Regex.Match(element, @"<\w([^\s]+)");
+                                                string hold = match1.Groups[0].Value;
+                                                hold = hold.Substring(1);
+
+                                                if (hold != saveNodeName)
+                                                {
+                                                    saveNodeName = hold;
+                                                }
+
+                                                // Ready to write!
+                                                writer.WriteStartElement(saveNodeName); // Write the Element currently beind handled
                                                 // Grab the desired section of the attribute out of element with regex!
                                                 Match match = Regex.Match(element, @"'([^']*)");
                                                 string att = match.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
 
                                                 writer.WriteAttributeString("type", att); // Give it its attributes
                                                 writer.WriteString(currentContent);
-                                                writer.WriteEndElement(); // Closes current Element
 
-                                            }
-                                            if (grandMasterD[storeAttribute].GetType() == typeof(extendedTeaspStorageManager)) // Has Value Groups
-                                            {
-                                                extendedTeaspStorageManager tempExt = (extendedTeaspStorageManager)grandMasterD[storeAttribute];
-                                                // Step 1: Check each string[] in the List<string[]> for the content of the element
-                                                ValGrpTemp = tempExt.getValueGroupCollection();
-                                                correspondTemp = tempExt.getCorrespondingValGrpTeasps();
-
-                                                teaspIndex = findIndex(ValGrpTemp, currentContent);
-
-                                                // Step 2: Either fetch the teasp or use the default
-                                                if (teaspIndex >= 0)
-                                                {
-                                                    teaspWithSub fetchTeasp = correspondTemp[teaspIndex];
-                                                    target = fetchTeasp.getTarget();
-                                                    element = fetchTeasp.getElementOrAttribute();
-                                                    stringOther = fetchTeasp.getSubstitution();
-                                                    placement = fetchTeasp.getPlacement();
-                                                    stringValue = stringOther[currentContent];
-
-                                                    // Ready to Write!
-                                                    writer.WriteStartElement(reader.Name); // Write the Element currently beind handled
-                                                    // Grab the desired section of the attribute out of element with regex!
-                                                    Match match = Regex.Match(element, @"'([^']*)");
-                                                    string att = match.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
-
-                                                    writer.WriteAttributeString("type", att); // Give it its attributes
-                                                    writer.WriteString(stringValue);
-                                                    writer.WriteEndElement(); // Closes current Element
-
-                                                }
-                                                else if (teaspIndex == -1)
-                                                {
-                                                    defaultTeaspSub = tempExt.getDefaultTeaspSub();
-                                                    target = defaultTeaspSub.getTarget();
-                                                    element = defaultTeaspSub.getElementOrAttribute();
-                                                    stringSub = defaultTeaspSub.getSubstitution();
-                                                    placement = defaultTeaspSub.getPlacement();
-
-                                                    // Ready to write!
-                                                    writer.WriteStartElement(reader.Name); // Write the Element currently beind handled
-                                                    // Grab the desired section of the attribute out of element with regex!
-                                                    Match match = Regex.Match(element, @"'([^']*)");
-                                                    string att = match.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
-
-                                                    writer.WriteAttributeString("type", att); // Give it its attributes
-                                                    writer.WriteString(currentContent);
-                                                    writer.WriteEndElement(); // Closes current Element
-                                                }
-
+                                                // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
+                                                writer.WriteEndElement();
                                             }
 
                                         }
-                                        break;
-                                    }
 
-                                    if (reader.Name == "transac") // Gotta hardcode this guy, doesnt appear in a JSON mapping file
-                                    {
-                                        storeAtt = reader.GetAttribute("type");
-                                        storeContent = reader.ReadElementContentAsString();
-                                        reader.ReadToNextSibling("date"); // ** ReadToNextSibling or ReadToFollowing???
-                                        storeDateContent = reader.ReadElementContentAsString();
-
-                                        writer.WriteStartElement("transacGrp");
-                                        writer.WriteStartElement("transac");
-                                        writer.WriteAttributeString("type", "transactionType");
-                                        writer.WriteString(storeAtt);
-                                        writer.WriteEndElement();
-
-                                        writer.WriteStartElement("transacNote");
-                                        writer.WriteAttributeString("type", "Responsability");
-                                        writer.WriteString(storeContent);
-                                        writer.WriteEndElement();
-
-                                        writer.WriteStartElement("date");
-                                        writer.WriteString(storeDateContent);
-                                        writer.WriteEndElement();
-
-                                        writer.WriteEndElement();
-                                        break;
-                                    }
-
-                                    if (reader.Name != "mtf" && !(reader.HasAttributes)) // Plain-Jane Element
-                                    {
-                                        writer.WriteStartElement(reader.Name);
-                                        globalOpenTags.Add(reader.Name);
-                                        break;
-                                    }
-
-                                    break;
-
-                                case XmlNodeType.EndElement: // Check to see if the current element is still open before closing anything
-
-                                    foreach(string s in globalOpenTags)
-                                    {
-                                        if (s == reader.Name)
-                                        {
-                                            writer.WriteEndElement();
-                                            globalOpenTags.Remove(reader.Name);
-                                        }
                                     }
                                     break;
+                                }
 
-                            }
+                                if (reader.Name == "transac") // Gotta hardcode this guy, doesnt appear in a JSON mapping file
+                                {
+                                    storeAtt = reader.GetAttribute("type");
+                                    storeContent = reader.ReadElementContentAsString();
+                                    reader.ReadToNextSibling("date"); // ** ReadToNextSibling or ReadToFollowing???
+                                    storeDateContent = reader.ReadElementContentAsString();
+
+                                    writer.WriteStartElement("transac");
+                                    writer.WriteAttributeString("type", "transactionType");
+                                    writer.WriteString(storeAtt);
+                                    writer.WriteEndElement();
+
+                                    writer.WriteStartElement("transacNote");
+                                    writer.WriteAttributeString("type", "Responsability");
+                                    writer.WriteString(storeContent);
+                                    writer.WriteEndElement();
+
+                                    writer.WriteStartElement("date");
+                                    writer.WriteString(storeDateContent);
+                                    writer.WriteEndElement();
+
+                                    break;
+                                }
+
+                                if (reader.Name != "mtf" && !(reader.HasAttributes)) // Plain-Jane Element
+                                {
+                                    writer.WriteStartElement(reader.Name);
+                                    // We used to write the element content, but that advances the parser so we'll do it later on now
+                                    break;
+                                }
+
+                                break;
+
+                            case XmlNodeType.EndElement: // Check to see if the current element is still open before closing anything
+
+                                    writer.WriteEndElement();
+                                    break;
+
+                            case XmlNodeType.Text:
+
+                                writer.WriteString(reader.Value);
+
+                                break;
+
+                          /*  case XmlNodeType.Whitespace:
+
+                                break; */
+                        }
+                    }
+
+                    // File has finished Reading, Close leftover tags from header
+                    bool success = true;
+
+                    while (success)
+                    {
+                        try
+                        {
+                            writer.WriteEndElement();
+                        }
+                        catch (Exception e)
+                        {
+                            success = false;
+                        }
+                    }
+
+                    // Wrap it up!
+                    writer.Close();
+
+                }
+            }
+        }
+
+        public static void reorderTBX(FileStream inOutXML, FileStream orderTBX)
+        {
+            XmlReaderSettings settingsNewR = new XmlReaderSettings();
+            XmlWriterSettings settingNewW = new XmlWriterSettings() { Indent = true, IndentChars = "\t" }; // I like tab.
+            string storeatt;
+            string storeID;
+
+            using (XmlReader reader2 = XmlReader.Create(inOutXML, settingsNewR))
+            {
+                using (XmlWriter writer2 = XmlWriter.Create(orderTBX, settingNewW))
+                {
+                    writer2.WriteStartDocument();
+                    writer2.WriteDocType("martif", null, null, "TBXcoreStructV02.dtd"); // DocType Declaration
+                    while(reader2.Read())
+                    {
+                        switch(reader2.NodeType)
+                        {
+                            case XmlNodeType.Element:
+
+
+
+
+                                if (reader2.Name == "termGrp")
+                                {
+                                    writer2.WriteStartElement("tig");
+                                    break;
+                                }
+
+
+                                if (reader2.Name == "languageGrp")
+                                {
+                                    reader2.Read(); // Whitespace
+                                    reader2.Read(); // Language
+
+                                    storeatt = reader2.GetAttribute("lang");
+
+                                    writer2.WriteStartElement("langSet");
+                                    writer2.WriteAttributeString("xmllang", storeatt);
+
+                                    reader2.Read(); // Text
+                                    reader2.Read(); // End Tag
+                                    break;
+                                }
+
+
+                                if (reader2.Name == "conceptGrp")
+                                {
+                                    // We need the Text Value of the concept child, so we must manually advance the reader
+                                    reader2.Read(); // Whitespace
+                                    reader2.Read(); // Concept
+                                    reader2.Read(); // Text
+
+                                    storeID = reader2.Name;
+                                    storeID = "_" + storeID;
+
+                                    writer2.WriteStartElement("termEntry");
+                                    writer2.WriteAttributeString("id", storeID);
+
+                                    reader2.Read(); // Advance one more so we have cleared the section and will continue to the next element beyond the concept closing tag.
+                                    break;
+                                }
+
+
+                                if(reader2.HasAttributes)
+                                {
+                                    storeatt = reader2.GetAttribute("type");
+                                    writer2.WriteStartElement(reader2.Name);
+                                    writer2.WriteAttributeString("type", storeatt);
+                                    break;
+                                }
+
+
+                                if (!(reader2.HasAttributes)) // We'll probably need several cases for when to not accept the element above this
+                                {
+                                    writer2.WriteStartElement(reader2.Name);
+                                    break;
+                                }
+
+                                break;
+
+                            case XmlNodeType.EndElement:
+                                writer2.WriteEndElement();
+                                break;
+
+                            case XmlNodeType.Text:
+                                writer2.WriteString(reader2.Value);
+                                break;
                         }
                     }
                 }
             }
+
         }
+
 
         public static string readFile(string type) // Start Here
         {
@@ -879,13 +1368,23 @@ namespace Csh_mt2tbx
 
             //Import XML File
             FileStream inXML = File.OpenRead(filename2);
-            FileStream outXML = File.OpenWrite("ConvertedTBX.tbx");
-            // FileStream orderXML = File.OpenWrite("OrderedTBX.tbx"); Keep the reorder method seperate, possibly close and reopen Converted file for only reading?
+            string removeFile = System.IO.Path.GetFileName(filename2);
+            removeFile = filename2.Replace(removeFile, "ConveretedTBX.tbx");
+            FileStream outXML = File.Create(removeFile);
+            FileStream orderXML = File.OpenWrite("OrderedTBX.tbx"); // Keep the reorder method seperate, possibly close and reopen Converted file for only reading?
 
-            startXMLImport(inXML, outXML, initialJSON);
+            startXMLImport(inXML, outXML, initialJSON); // FINISHED
 
-            // reorderTBX(outXML, orderXML);
+            // Close outXML for Writing
+            outXML.Close();
 
+            // Reopen for reading
+            FileStream inOutXML = File.OpenRead(removeFile);
+
+            reorderTBX(inOutXML, orderXML);
+
+            inXML.Close();
+            // orderXML.Close();
         }
     }
 }
