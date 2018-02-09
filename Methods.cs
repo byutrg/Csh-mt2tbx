@@ -872,13 +872,15 @@ namespace Csh_mt2tbx
             teaspNoSub castWithout;
             teaspWithSub castWith;
             List<string> xrefPairs = new List<string>();
+            XmlDocument doc = new XmlDocument();
 
             string storeAtt;
             string storeSecondAtt;
             string storeContent;
             string storeDateContent;
-            string extraContent;
-
+            string scrapeAllText;
+            string scrapeAllXML;
+            string rPattern = "<.[^><.)]+>";
 
             using (XmlReader reader = XmlReader.Create(inXML, settingsR))
             {
@@ -956,55 +958,29 @@ namespace Csh_mt2tbx
                                     storeAttribute = reader.GetAttribute("type");
                                     if(grandMasterD.ContainsKey(storeAttribute)) // Time to process
                                     {
-                                        reader.HasChild
                                         string saveNodeName = reader.Name;
-                                        try
+                                        XmlNode node = doc.ReadNode(reader);
+                                        scrapeAllText = node.InnerText;
+                                        scrapeAllXML = node.InnerXml;
+
+                                        // Clean-up the text for new-lines
+                                        if (scrapeAllText.Contains("\n"))
                                         {
-                                            currentContent = reader.ReadElementContentAsString();
+                                            scrapeAllText = Regex.Replace(scrapeAllText, @"\n", "");
                                         }
-                                        catch (Exception e)
+
+                                        bool hasXML = Regex.IsMatch(scrapeAllXML, rPattern);
+
+                                        if(!hasXML)
+                                        { // Plain Content
+                                            currentContent = scrapeAllText;
+                                        }
+                                        else  
                                         {
                                             // The next element is therefore another element, probably xref inside a descrip
-
-                                            // The reader found the xref, and will now grab the xref's content
-                                            string storeAftermath = reader.ReadElementContentAsString();
-                                            // The reader jumps the xref end tag (why?) and now grab the remaining content of descrip, 
-                                            // and reader will end on descrip end tag
-                                            string storeDescripExtra = reader.ReadContentAsString();
-
-                                            // There are x number of xrefs that can be attached to this one descrip, so we will have 
-                                            // to keep checking if the next element is still an xref
-
-                                            while (reader.Name == "xref")
-                                            {
-                                                string storeMoreA = reader.ReadElementContentAsString();
-                                                string storeMoreB = reader.ReadContentAsString();
-                                                string storeMoreX = storeMoreA + storeMoreB;
-                                                xrefPairs.Add(storeMoreX);
-                                            }
-
-                                            //Concatenate the two
-                                            storeAftermath = storeAftermath + storeDescripExtra;
                                             writer.WriteStartElement("admin");
                                             writer.WriteAttributeString("type", "source");
-                                            extraContent = "";
-                                            if (xrefPairs.Count >= 1) // Add the extra content if applicable from xrefs
-                                            {
-                                                foreach (string s in xrefPairs)
-                                                {
-                                                    extraContent = extraContent + s;
-                                                }
-                                            }
-                                            storeAftermath = storeAftermath + extraContent;
-
-                                            // For some reason, sometimes the last string has a new-line character on the tail end, throwing off the closing admin tag
-                                            string checkNewLine = storeAftermath.Substring(storeAftermath.Length - 1);
-                                            if (checkNewLine == "\n")
-                                            {
-                                                storeAftermath = storeAftermath.Substring(0, storeAftermath.Length - 1);
-                                            } 
-
-                                            writer.WriteString(storeAftermath);
+                                            writer.WriteString(scrapeAllText);
                                             writer.WriteEndElement();
                                             xrefPairs.Clear();
                                             break;
@@ -1259,6 +1235,51 @@ namespace Csh_mt2tbx
 
 
 
+                                if (reader2.Name == "descripGrp") // This one is important, often admin and descrip tags are isolated in descripGrp's that dont need to be
+                                {
+                                    reader2.Read();
+                                    while(reader2.NodeType == XmlNodeType.Whitespace)
+                                    {
+                                        reader2.Read();
+                                    }
+                                    if(reader2.Name == "descrip" || reader2.Name == "admin" || reader2.Name == "termNote")
+                                    {
+                                        string name = reader2.Name;
+                                        string attribute = reader2.GetAttribute("type");
+                                        string text = reader2.ReadElementContentAsString();
+                                        reader2.Read();
+                                        while(reader2.NodeType == XmlNodeType.Whitespace)
+                                        {
+                                            reader2.Read();
+                                        }
+                                        if(reader2.Name == "descripGrp" && reader2.NodeType == XmlNodeType.EndElement)
+                                        { // The admin or descrip does not need to be in the descripGrp tag, and will be output without it
+                                            writer2.WriteStartElement(name);
+                                            writer2.WriteAttributeString("type", attribute);
+                                            writer2.WriteString(text);
+                                            writer2.WriteEndElement();
+                                            reader2.Read();
+                                            break;
+                                        }
+                                        else // There is more inside this descrip, so write what we picked up and let it keep reading
+                                        {
+                                            writer2.WriteStartElement("descripGrp");
+                                            writer2.WriteStartElement(name);
+                                            writer2.WriteAttributeString("type", attribute);
+                                            writer2.WriteString(text);
+                                            writer2.WriteEndElement();
+                                        }
+
+
+                                    }
+                                    else
+                                    {
+                                        writer2.WriteStartElement("descripGrp");
+                                    }
+                                    
+                                }
+
+
                                 if (reader2.Name == "termGrp")
                                 {
                                     writer2.WriteStartElement("tig");
@@ -1289,7 +1310,7 @@ namespace Csh_mt2tbx
                                     reader2.Read(); // Concept
                                     reader2.Read(); // Text
 
-                                    storeID = reader2.Name;
+                                    storeID = reader2.Value;
                                     storeID = "_" + storeID;
 
                                     writer2.WriteStartElement("termEntry");
@@ -1371,7 +1392,8 @@ namespace Csh_mt2tbx
             string removeFile = System.IO.Path.GetFileName(filename2);
             removeFile = filename2.Replace(removeFile, "ConveretedTBX.tbx");
             FileStream outXML = File.Create(removeFile);
-            FileStream orderXML = File.OpenWrite("OrderedTBX.tbx"); // Keep the reorder method seperate, possibly close and reopen Converted file for only reading?
+            string outFileName = removeFile.Replace("ConveretedTBX.tbx", "OrderedTBX.tbx");
+            FileStream orderXML = File.Create(outFileName); // Keep the reorder method seperate, possibly close and reopen Converted file for only reading?
 
             startXMLImport(inXML, outXML, initialJSON); // FINISHED
 
