@@ -36,7 +36,6 @@ using Microsoft.Win32;
 
 namespace Csh_mt2tbx
 {
-
     public class extendedTeaspStorageManager
     {
         public List<string[]> valueGroupCollection; // Each string[] will correspond with the teasp in the same position
@@ -110,14 +109,14 @@ namespace Csh_mt2tbx
     {
         public string target;
         public string elementOrAttributes;
-        public Dictionary<string,string> substitution = new Dictionary<string, string> ();
+        public Dictionary<string, string> substitution = new Dictionary<string, string>();
         public string placement;
 
-        public teaspWithSub(string t, string ea, Dictionary<string,string> s, string p)
+        public teaspWithSub(string t, string ea, Dictionary<string, string> s, string p)
         {
             target = t;
             elementOrAttributes = ea;
-            foreach(KeyValuePair<string,string> entry in s)
+            foreach (KeyValuePair<string, string> entry in s)
             {
                 substitution.Add(entry.Key, entry.Value);
             }
@@ -151,12 +150,12 @@ namespace Csh_mt2tbx
 
     public class templateSet
     {
-        public List<object> conceptMappingTemplates = new List<object> ();
-        public List<string> conceptMappingTemplatesKeys = new List<string> ();
-        public List<object> languageMappingTemplates = new List<object> ();
-        public List<string> languageMappingTemplatesKeys = new List<string> ();
-        public List<object> termMappingTemplates = new List<object> ();
-        public List<string> termMappingTemplatesKeys = new List<string> ();
+        public List<object> conceptMappingTemplates = new List<object>();
+        public List<string> conceptMappingTemplatesKeys = new List<string>();
+        public List<object> languageMappingTemplates = new List<object>();
+        public List<string> languageMappingTemplatesKeys = new List<string>();
+        public List<object> termMappingTemplates = new List<object>();
+        public List<string> termMappingTemplatesKeys = new List<string>();
         public object[] castObjArray;
         public string key;
         public teaspNoSub teaspNS;
@@ -166,18 +165,13 @@ namespace Csh_mt2tbx
         public int lKeyCounter = 0;
         public int tKeyCounter = 0;
         public string[] valGrp;
-        public List<string[]> ls = new List<string[]> ();
-        public List<object> lt = new List<object> ();
-        public teaspNoSub dt;
-        public extendedTeaspStorageManager ETSM;
-
 
         // // // //
 
         // This is the Dicitonary that will contain the Mapping Templates Strings and an object (Either a plain teasp or a extendedTeaspStorageManager object).
         // Regardless of what kind of object each Key-Value pair has, type will be determined at runtime and processing will be done then.
 
-        public Dictionary<string, object> grandMasterDictionary = new Dictionary<string, object> ();
+        public Dictionary<string, object> grandMasterDictionary = new Dictionary<string, object>();
 
         // // // //
 
@@ -190,7 +184,7 @@ namespace Csh_mt2tbx
 
         public templateSet(Dictionary<string, object> c, Dictionary<string, object> l, Dictionary<string, object> t)
         {
-            foreach(var entry in c)
+            foreach (var entry in c)
             {
                 object tempUNK1 = entry.Value;
                 conceptMappingTemplates.Add(tempUNK1);
@@ -198,7 +192,7 @@ namespace Csh_mt2tbx
                 key = entry.Key;
                 conceptMappingTemplatesKeys.Add(key);
             }
-            foreach(var entry2 in l)
+            foreach (var entry2 in l)
             {
                 object tempUNK2 = entry2.Value;
                 languageMappingTemplates.Add(tempUNK2);
@@ -288,6 +282,9 @@ namespace Csh_mt2tbx
                 }
                 else if (castObjArray.Length != 0 && castObjArray.Length > 1) // This is a template set with Value groups 
                 {
+                    List<string[]> ls0 = new List<string[]>();
+                    List<object> lt0 = new List<object>();
+                    teaspNoSub defTeasp0;
 
                     JArray temp = (JArray)castObjArray[0]; // This will have the default Teasp and subsequent value groups
                     object[] deftsp = (object[])temp.ToObject(typeof(object[])); // Grab the default teasp
@@ -299,15 +296,15 @@ namespace Csh_mt2tbx
                     p = (string)defaultTsp[3].ToObject(typeof(string));
 
                     teaspNS = new teaspNoSub(t, ea, s, p); // This is now ready to give to the extendedTeaspStorageManager
-                    dt = teaspNS;
-                    
+                    defTeasp0 = teaspNS;
+
                     deftsp = deftsp.Skip(1).ToArray(); // We dont want the first array, it is its own teasp, this array now just has value groups
-                    foreach(JArray st in deftsp)
+                    foreach (JArray st in deftsp)
                     {
                         string[] singleValGrp = (string[])st.ToObject(typeof(string[]));
-                        ls.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
+                        ls0.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
                     }
-                    
+
                     castObjArray = castObjArray.Skip(1).ToArray(); // We dont want the first array, because it will be handled seperately (above)
                     foreach (JArray tsp in castObjArray) // This handles the teasps that correspond with each value-group
                     {
@@ -345,23 +342,23 @@ namespace Csh_mt2tbx
                             Dictionary<string, string> exceptionSub = (Dictionary<string, string>)tsp[2].ToObject(typeof(Dictionary<string, string>));
                             var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
 
-                            lt.Add(teaspMy);
+                            lt0.Add(teaspMy);
                         }
                         else if (handler == 1)
                         {
                             string str = (string)tsp[2].ToObject(typeof(string));
                             var teaspMy = new teaspNoSub(t, ea, s, p);
 
-                            lt.Add(teaspMy);
+                            lt0.Add(teaspMy);
                         }
                     } // When this is finished, lt will now have all the teasps that correspond to each value group ready
 
                     // We are now ready to build the extendedTeaspStorageManager
 
-                    ETSM = new extendedTeaspStorageManager(ls, lt, dt);
+                    extendedTeaspStorageManager ETSM1 = new extendedTeaspStorageManager(ls0, lt0, defTeasp0);
 
                     // Add it to the dictionary
-                    grandMasterDictionary.Add(conceptMappingTemplatesKeys[cKeyCounter], ETSM);
+                    grandMasterDictionary.Add(conceptMappingTemplatesKeys[cKeyCounter], ETSM1);
                     cKeyCounter++;
                 }
 
@@ -415,19 +412,23 @@ namespace Csh_mt2tbx
                     }
                     else if (handler == 1)
                     {
-                        string s = (string)plainTeasp[2].ToObject(typeof(string)); 
+                        string s = (string)plainTeasp[2].ToObject(typeof(string));
                         var teaspMy = new teaspNoSub(t, ea, s, p);
 
                         grandMasterDictionary.Add(languageMappingTemplatesKeys[lKeyCounter], teaspMy);
                     }
-                    
+
                     // // //
 
                     lKeyCounter++;
 
                 }
-                else if (castObjArray.Length != 0 && castObjArray.Length > 1) 
+                else if (castObjArray.Length != 0 && castObjArray.Length > 1)
                 {
+                    List<string[]> ls2 = new List<string[]>();
+                    List<object> lt2 = new List<object>();
+                    teaspNoSub defTeasp2;
+
 
                     JArray temp = (JArray)castObjArray[0]; // This will have the default Teasp and subsequent value groups
                     object[] deftsp = (object[])temp.ToObject(typeof(object[])); // Grab the default teasp
@@ -439,13 +440,13 @@ namespace Csh_mt2tbx
                     p = (string)defaultTsp[3].ToObject(typeof(string));
 
                     teaspNS = new teaspNoSub(t, ea, s, p); // This is now ready to give to the extendedTeaspStorageManager
-                    dt = teaspNS;
+                    defTeasp2 = teaspNS;
 
                     deftsp = deftsp.Skip(1).ToArray(); // We dont want the first array, it is its own teasp, this array now just has value groups
                     foreach (JArray st in deftsp)
                     {
                         string[] singleValGrp = (string[])st.ToObject(typeof(string[]));
-                        ls.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
+                        ls2.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
                     }
 
                     castObjArray = castObjArray.Skip(1).ToArray(); // We dont want the first array, because it will be handled seperately (above)
@@ -485,24 +486,24 @@ namespace Csh_mt2tbx
                             Dictionary<string, string> exceptionSub = (Dictionary<string, string>)tsp[2].ToObject(typeof(Dictionary<string, string>));
                             var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
 
-                            lt.Add(teaspMy);
+                            lt2.Add(teaspMy);
                         }
                         else if (handler == 1)
                         {
                             string str = (string)tsp[2].ToObject(typeof(string));
                             var teaspMy = new teaspNoSub(t, ea, s, p);
 
-                            lt.Add(teaspMy);
+                            lt2.Add(teaspMy);
                         }
 
                     } // When this is finished, lt will now have all the teasps that correspond to each value group ready
 
                     // We are now ready to build the extendedTeaspStorageManager
 
-                    ETSM = new extendedTeaspStorageManager(ls, lt, dt);
+                    extendedTeaspStorageManager ETSM2 = new extendedTeaspStorageManager(ls2, lt2, defTeasp2);
 
                     // Add it to the dictionary
-                    grandMasterDictionary.Add(languageMappingTemplatesKeys[lKeyCounter], ETSM);
+                    grandMasterDictionary.Add(languageMappingTemplatesKeys[lKeyCounter], ETSM2);
                     lKeyCounter++;
                 }
 
@@ -568,6 +569,9 @@ namespace Csh_mt2tbx
                 }
                 else if (castObjArray.Length != 0 && castObjArray.Length > 1)
                 {
+                    List<string[]> ls3 = new List<string[]>();
+                    List<object> lt3 = new List<object>();
+                    teaspNoSub defTeasp3;
 
                     JArray temp = (JArray)castObjArray[0]; // This will have the default Teasp and subsequent value groups
                     object[] deftsp = (object[])temp.ToObject(typeof(object[])); // Grab the default teasp
@@ -579,13 +583,13 @@ namespace Csh_mt2tbx
                     p = (string)defaultTsp[3].ToObject(typeof(string));
 
                     teaspNS = new teaspNoSub(t, ea, s, p); // This is now ready to give to the extendedTeaspStorageManager
-                    dt = teaspNS;
+                    defTeasp3 = teaspNS;
 
                     deftsp = deftsp.Skip(1).ToArray(); // We dont want the first array, it is its own teasp, this array now just has value groups
                     foreach (JArray st in deftsp)
                     {
                         string[] singleValGrp = (string[])st.ToObject(typeof(string[]));
-                        ls.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
+                        ls3.Add(singleValGrp); // This populates the list of string[] for the extendedTeaspStorageManager with all value-groups
                     }
 
                     castObjArray = castObjArray.Skip(1).ToArray(); // We dont want the first array, because it will be handled seperately (above)
@@ -625,23 +629,23 @@ namespace Csh_mt2tbx
                             Dictionary<string, string> exceptionSub = (Dictionary<string, string>)tsp[2].ToObject(typeof(Dictionary<string, string>));
                             var teaspMy = new teaspWithSub(t, ea, exceptionSub, p);
 
-                            lt.Add(teaspMy);
+                            lt3.Add(teaspMy);
                         }
                         else if (handler == 1)
                         {
                             string str = (string)tsp[2].ToObject(typeof(string));
                             var teaspMy = new teaspNoSub(t, ea, s, p);
 
-                            lt.Add(teaspMy);
+                            lt3.Add(teaspMy);
                         }
                     } // When this is finished, lt will now have all the teasps that correspond to each value group ready
 
                     // We are now ready to build the extendedTeaspStorageManager
 
-                    ETSM = new extendedTeaspStorageManager(ls, lt, dt);
+                    extendedTeaspStorageManager ETSM3 = new extendedTeaspStorageManager(ls3, lt3, defTeasp3);
 
                     // Add it to the dictionary
-                    grandMasterDictionary.Add(termMappingTemplatesKeys[tKeyCounter], ETSM);
+                    grandMasterDictionary.Add(termMappingTemplatesKeys[tKeyCounter], ETSM3);
                     tKeyCounter++;
                 }
 
@@ -655,9 +659,9 @@ namespace Csh_mt2tbx
 
     public class oneLevelMapping
     {
-        public Dictionary<string, object> cOLvlDictionary = new Dictionary<string, object> ();
-        public Dictionary<string, object> lOLvlDictionary = new Dictionary<string, object> ();
-        public Dictionary<string, object> tOLvlDictionary = new Dictionary<string, object> ();
+        public Dictionary<string, object> cOLvlDictionary = new Dictionary<string, object>();
+        public Dictionary<string, object> lOLvlDictionary = new Dictionary<string, object>();
+        public Dictionary<string, object> tOLvlDictionary = new Dictionary<string, object>();
         public templateSet ts;
 
         public oneLevelMapping(Dictionary<string, JObject> d)
@@ -683,15 +687,15 @@ namespace Csh_mt2tbx
 
     public class cMapClass
     {
-        public Dictionary<string, JObject> cDefault = new Dictionary<string, JObject> ();
+        public Dictionary<string, JObject> cDefault = new Dictionary<string, JObject>();
         public oneLevelMapping passDictionary;
-        public Dictionary<string, object> ds = new Dictionary<string, object> ();
+        public Dictionary<string, object> ds = new Dictionary<string, object>();
 
         public cMapClass(JObject c, JObject l, JObject t)
         {
             cDefault.Add("concept", c);
             cDefault.Add("language", l);
-            cDefault.Add("term", t); 
+            cDefault.Add("term", t);
         }
 
         public Dictionary<string, object> parseOLvl() //Hand over dictionary to oneLevelMapping
@@ -711,34 +715,51 @@ namespace Csh_mt2tbx
 
     public class listOfOrders
     {
-        List<string[]> concept;
-        List<string[]> language;
-        List<string[]> term;
-        int i = 0;
+        List<string[]> concept = new List<string[]>();
+        List<string[]> language = new List<string[]>();
+        List<string[]> term = new List<string[]>();
 
-        public listOfOrders(Dictionary<string, JObject> k)
+        public listOfOrders(Dictionary<string, JArray> k)
         {
-            JObject t = k["conceptGrp"];
-            string[][] s = t.ToObject<string[][]>();
-            foreach(string[] a in s)
+            JArray c = (JArray)k["conceptGrp"];
+            object[] sArray1 = (object[])c.ToObject(typeof(object[]));
+            string[][] s = c.ToObject<string[][]>();
+            foreach (string[] a in s)
             {
                 concept.Add(a);
-            }      
+            }
 
-            JObject t1 = k["languageGrp"];
-            string[][] s1 = t1.ToObject<string[][]>();
+            JArray l = (JArray)k["languageGrp"];
+            object[] sArray2 = (object[])l.ToObject(typeof(object[]));
+            string[][] s1 = l.ToObject<string[][]>();
             foreach (string[] a in s1)
             {
                 language.Add(a);
             }
 
-            JObject t2 = k["termGrp"];
-            string[][] s2 = t2.ToObject<string[][]>();
+            JArray t = (JArray)k["termGrp"];
+            object[] sArray3 = (object[])t.ToObject(typeof(object[]));
+            string[][] s2 = t.ToObject<string[][]>();
             foreach (string[] a in s2)
             {
                 term.Add(a);
             }
 
+        }
+
+        public List<string[]> getConcerpt()
+        {
+            return concept;
+        }
+
+        public List<string[]> getLanugage()
+        {
+            return language;
+        }
+
+        public List<string[]> getTerm()
+        {
+            return term;
         }
     }
 
@@ -746,23 +767,65 @@ namespace Csh_mt2tbx
 
     public class queueOrders
     {
-        public Dictionary<string, JObject> qBOrders = new Dictionary<string, JObject>(); //Or just a regular object?? 
+        public Dictionary<string, JArray> qBOrders = new Dictionary<string, JArray>(); //Or just a regular object?? 
         public listOfOrders loo;
 
         public queueOrders(JObject j)
         {
-            JObject cGStrings = (JObject)j["conceptGrp"];
-            JObject lGStrings = (JObject)j["languageGrp"];
-            JObject tGStrings = (JObject)j["termGrp"];
+            JArray cGStrings = (JArray)j["conceptGrp"];
+            JArray lGStrings = (JArray)j["languageGrp"];
+            JArray tGStrings = (JArray)j["termGrp"];
 
             qBOrders.Add("conceptGrp", cGStrings);
             qBOrders.Add("languageGrp", lGStrings);
             qBOrders.Add("termGrp", tGStrings);
+            loo = new listOfOrders(qBOrders);
         }
 
-        public void passDictionary()
+        public Dictionary<string, string[]> getOrders()
         {
-            loo = new listOfOrders(qBOrders);
+            Dictionary<string, string[]> combinedOrders = new Dictionary<string, string[]>();
+            List<string[]> c = loo.getConcerpt();
+            List<string[]> l = loo.getLanugage();
+            List<string[]> t = loo.getTerm();
+
+            for (int i = 0; i < (c.Count()); i++)
+            {
+                // for each value in a string array, there needs to be a key with that string value, and a value of the array. In an array of 3 strings, you will have 3 keys and each will have the same value
+                for (int j = 0; j < 2; j++)
+                {
+                    if (combinedOrders.ContainsKey(c[i][j]))
+                    {
+                        continue;
+                    }
+                    combinedOrders.Add(c[i][j], c[i]); // Make sure this isnt nonsense
+                }
+            }
+            for (int i = 0; i < (l.Count()); i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    if (combinedOrders.ContainsKey(l[i][j]))
+                    {
+                        continue;
+                    }
+                    combinedOrders.Add(l[i][j], l[i]);
+                }
+            }
+            for (int i = 0; i < (t.Count()); i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    if (combinedOrders.ContainsKey(t[i][j]))
+                    {
+                        continue;
+                    }
+                    combinedOrders.Add(t[i][j], t[i]);
+                }
+            }
+
+            return combinedOrders;
+
         }
     }
 
@@ -773,14 +836,14 @@ namespace Csh_mt2tbx
 
     // This is where the surface level JSON file is stored. The categorical mapping is parsed though the parseCMap method and the Queue-draining orders are parsed through the startQueue method
 
-    public class levelOneClass 
+    public class levelOneClass
     {
         public string dialect { get; set; }
         public string xcsElement { get; set; }
         public JArray objectStorage { get; set; }
         public cMapClass parseCMP;
         public queueOrders QDO;
-        public Dictionary<string, object> dictionaryStorage = new Dictionary<string, object> ();
+        public Dictionary<string, object> dictionaryStorage = new Dictionary<string, object>();
 
         public levelOneClass(string d, string x, JArray cmp)
         {
@@ -807,6 +870,7 @@ namespace Csh_mt2tbx
 
             parseCMP = new cMapClass(conceptLvl, languageLvl, termLvl);
             dictionaryStorage = parseCMP.parseOLvl();
+            startQueue();
         }
 
         public void startQueue()
@@ -820,6 +884,11 @@ namespace Csh_mt2tbx
             return dictionaryStorage;
         }
 
+        public Dictionary<string, string[]> getQueueOrders()
+        {
+            return QDO.getOrders();
+        }
+
 
     }
 
@@ -827,6 +896,352 @@ namespace Csh_mt2tbx
 
     public class Methods
     {
+        public static void addColon(string pathToFile)
+        {
+            string text = File.ReadAllText(pathToFile);
+            text = text.Replace("xmllang", "xml:lang");
+            text = text.Replace("termGrp", "tig");
+            text = text.Replace(" type=\"\"", "");
+            string pattern = @"<descripGrp>[\n\w\d\s<=>\/\:\-\,\\\^\$\.\|\?\*\+\(\)\{\}\""âãäåæçèéêëìíîïðñòóôõøùúûüýþÿı\']*?<\/descripGrp>";
+            MatchCollection matches = Regex.Matches(text, pattern, RegexOptions.IgnoreCase);
+            foreach (Match match in matches)
+            {
+                string originalCopy = match.Groups[0].Value;
+                string childCheck = match.Groups[0].Value;
+                int countTabs = 0;
+                int countOpenTags = 0;
+
+                Regex regexInner = new Regex(@"<descrip[^G]");
+                Match matchInner = regexInner.Match(childCheck);
+
+                if (!matchInner.Success)
+                {
+                    foreach (char c in childCheck)
+                    {
+                        if (c == '\t')
+                        {
+                            countTabs++;
+                        }
+                        if (c == '<')
+                        {
+                            countOpenTags++;
+                        }
+                        if (countOpenTags > 1)
+                        {
+                            break;
+                        }
+                    }
+                    string replacementWithTabs = "<descrip type=\"otherBinaryData\">see next element</descrip>";
+                    for (int i = 0; i < countTabs; i++)
+                    {
+                        replacementWithTabs = "\t" + replacementWithTabs;
+                    }
+                    replacementWithTabs = "<descripGrp>\r\n" + replacementWithTabs;
+                    childCheck = childCheck.Replace("<descripGrp>", replacementWithTabs);
+                    text = text.Replace(originalCopy, childCheck);
+                }
+            }
+            string pattern2 = @"<[\n\w\d\s<=>\:\-\,\\\^\$\.\|\?\*\+\(\)\{\}âãäåæçèéêëìíîïðñòóôõøùúûüýþÿ\""\']*?>\t+";
+            MatchCollection matches2 = Regex.Matches(text, pattern2, RegexOptions.IgnoreCase);
+            foreach (Match match2 in matches2)
+            {
+                string original = match2.Groups[0].Value;
+                string change = match2.Groups[0].Value;
+
+                change = change.Replace("\t", "");
+                text = text.Replace(original, change);
+            }
+            File.WriteAllText(pathToFile, text);
+        }
+
+        public static void finalRecursion(XmlNode n, XmlWriter writer9)
+        {
+            XmlNode termPosition = null;
+            XmlNode termNoteNode = null;
+            XmlNode auxInfoNode = null;
+
+            // First move the necessary node(s)
+
+            for (int i = 0; i < n.ChildNodes.Count; i++)
+            {
+                if (n.ChildNodes[i].Name == "term")
+                {
+                    termPosition = n.ChildNodes[i];
+                }
+
+                if (n.ChildNodes[i].Name == "termNote")
+                {
+                    termNoteNode = n.ChildNodes[i];
+                    n.InsertAfter(termNoteNode, termPosition); // Should throw error if not term is found
+                }
+
+                if (n.Name == "langSet" && n.ChildNodes[i].Name != "termGrp" && n.ChildNodes[i].NodeType != XmlNodeType.Whitespace) // Move auxinfo to top of langSet
+                {
+                    auxInfoNode = n.ChildNodes[i];
+                    n.PrependChild(auxInfoNode);
+                }
+
+            }
+
+            // Second, recursively print nodes
+
+            if (n.Attributes["type"] != null)
+            {
+                string storeAtt = n.Attributes["type"].Value;
+                writer9.WriteStartElement(n.Name);
+                writer9.WriteAttributeString("type", storeAtt);
+            }
+            else if (n.Attributes["lang"] != null)
+            {
+                writer9.WriteStartElement(n.Name);
+                writer9.WriteAttributeString("lang", n.Attributes["lang"].Value);
+            }
+            else if (n.Attributes["id"] != null)
+            {
+                writer9.WriteStartElement(n.Name);
+                writer9.WriteAttributeString("id", n.Attributes["id"].Value);
+            }
+            else if (n.Attributes["xmllang"] != null)
+            {
+                writer9.WriteStartElement(n.Name);
+                writer9.WriteAttributeString("xmllang", n.Attributes["xmllang"].Value);
+            }
+            else
+            {
+                writer9.WriteStartElement(n.Name);
+            }
+
+            if (n.HasChildNodes && n.ChildNodes.Count > 1) // Dangerous bet: If it just has text it will only have 1 child, otherwise it should have more?
+            {
+                for (int u = 0; u < n.ChildNodes.Count; u++)
+                {
+                    if (n.ChildNodes[u].NodeType == XmlNodeType.Whitespace)
+                    {
+                        continue;
+                    }
+
+                    if (n.ChildNodes[u].NodeType == XmlNodeType.Element)
+                    {
+                        if (n.ChildNodes[u].Attributes["type"] != null && n.ChildNodes[u].Attributes["type"].Value.Contains("FLAG")) // All flagged tags should come through here
+                        {
+                            if (n.ChildNodes[u].Attributes["type"].Value.Contains("annotatedNoteFLAG"))
+                            {
+                                writer9.WriteStartElement("adminGrp");
+                                if (n.ChildNodes[u].Name == "note")
+                                {
+                                    writer9.WriteStartElement("admin");
+                                }
+                                else
+                                {
+                                    writer9.WriteStartElement(n.ChildNodes[u].Name);
+                                }
+                                writer9.WriteAttributeString("type", "annotatedNote");
+                                writer9.WriteString(n.ChildNodes[u].InnerText);
+                                writer9.WriteEndElement();
+
+                                writer9.WriteStartElement(n.ChildNodes[u + 2].Name);
+                                writer9.WriteAttributeString("type", n.ChildNodes[u + 2].Attributes["type"].Value);
+                                writer9.WriteString(n.ChildNodes[u + 2].InnerText);
+                                writer9.WriteEndElement();
+                                writer9.WriteEndElement();
+                                u += 2;
+                                continue;
+                            }
+                        }
+                        XmlNode k = n.ChildNodes[u];
+                        finalRecursion(k, writer9);
+                    }
+
+                    if (n.ChildNodes[u].NodeType == XmlNodeType.Text)
+                    {
+                        string holdText = n.ChildNodes[u].InnerText;
+                        if (holdText.Contains("\t"))
+                        {
+                            holdText = holdText.Replace("\t", "");
+                        }
+                        writer9.WriteString(holdText);
+                        continue;
+                    }
+
+                    if (n.ChildNodes[u].NodeType == XmlNodeType.EndElement)
+                    {
+                        writer9.WriteEndElement();
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                string holdText = n.InnerText;
+                if (holdText.Contains("\t"))
+                {
+                    holdText = holdText.Replace("\t", "");
+                }
+                writer9.WriteString(holdText);
+            }
+
+            writer9.WriteEndElement();
+        }
+
+        public static void finalProcesses(FileStream finalIn, FileStream outFinal)
+        {
+            XmlDocument doc9 = new XmlDocument();
+            XmlReaderSettings settingsNewR9 = new XmlReaderSettings();
+            settingsNewR9.DtdProcessing = DtdProcessing.Parse;
+            XmlWriterSettings settingNewW9 = new XmlWriterSettings() { Indent = true, IndentChars = "\t" };
+
+            using (XmlReader reader9 = XmlReader.Create(finalIn, settingsNewR9))
+            {
+                using (XmlWriter writer9 = XmlWriter.Create(outFinal, settingNewW9))
+                {
+                    writer9.WriteStartDocument();
+                    writer9.WriteDocType("martif", null, "TBXcoreStructV02.dtd", null); // DocType Declaration
+                    while (reader9.Read())
+                    {
+                        switch (reader9.NodeType)
+                        {
+                            case XmlNodeType.Whitespace:
+                                break;
+
+                            case XmlNodeType.Element:
+                                if (reader9.HasAttributes && reader9.Name != "langSet")
+                                {
+                                    if (reader9.GetAttribute("type") != null && reader9.GetAttribute("type").Contains("FLAG")) // All flagged tags should come through here
+                                    {
+                                        if (reader9.GetAttribute("type").Contains("annotatedNoteFLAG"))
+                                        {
+                                            writer9.WriteStartElement("adminGrp");
+                                            writer9.WriteStartElement(reader9.Name);
+                                            writer9.WriteAttributeString("type", "annotatedNote");
+                                            writer9.WriteString(reader9.ReadElementContentAsString());
+                                            writer9.WriteEndElement();
+                                            reader9.Read();
+                                            writer9.WriteStartElement(reader9.Name);
+                                            writer9.WriteAttributeString("type", reader9.GetAttribute("type"));
+                                            writer9.WriteString(reader9.ReadElementContentAsString());
+                                            writer9.WriteEndElement();
+                                            writer9.WriteEndElement();
+                                        }
+                                        break;
+                                    }
+
+                                    writer9.WriteStartElement(reader9.Name);
+                                    if (reader9.GetAttribute("type") != null)
+                                    {
+                                        writer9.WriteAttributeString("type", reader9.GetAttribute("type"));
+                                    }
+                                    if (reader9.GetAttribute("lang") != null)
+                                    {
+                                        writer9.WriteAttributeString("lang", reader9.GetAttribute("lang"));
+                                    }
+                                    if (reader9.GetAttribute("id") != null)
+                                    {
+                                        writer9.WriteAttributeString("id", reader9.GetAttribute("id"));
+                                    }
+                                    if (reader9.GetAttribute("xmllang") != null)
+                                    {
+                                        writer9.WriteAttributeString("xmllang", reader9.GetAttribute("xmllang"));
+                                    }
+                                    if (reader9.GetAttribute("multimedia") != null)
+                                    {
+                                        writer9.WriteAttributeString("multimedia", reader9.GetAttribute("multimedia"));
+                                    }
+                                    if (reader9.Name == "xref" && reader9.GetAttribute("target") == null)
+                                    {
+                                        reader9.Read();
+                                        writer9.WriteAttributeString("target", reader9.Value);
+                                        writer9.WriteString("Graphic");
+                                    }
+                                    if (reader9.Name == "martif")
+                                    {
+                                        writer9.WriteAttributeString("xmllang", "en");
+                                    }
+                                }
+                                else if (reader9.Name == "langSet")
+                                {
+                                    // Move termNotes
+                                    XmlNode n = doc9.ReadNode(reader9);
+                                    finalRecursion(n, writer9);
+                                }
+                                else
+                                {
+                                    writer9.WriteStartElement(reader9.Name);
+                                }
+                                break;
+
+                            case XmlNodeType.Text:
+                                string holdText = reader9.Value;
+                                if (holdText.Contains("\t"))
+                                {
+                                    holdText = holdText.Replace("\t", "");
+                                }
+                                writer9.WriteString(holdText);
+                                break;
+
+                            case XmlNodeType.EndElement:
+                                writer9.WriteEndElement();
+                                break;
+
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void prettyPreProcess(FileStream preXML, FileStream PreStreamOut)
+        {
+            XmlReaderSettings settingsNewR0 = new XmlReaderSettings();
+            XmlWriterSettings settingNewW0 = new XmlWriterSettings() { Indent = true, IndentChars = "\t" };
+
+            using (XmlReader reader0 = XmlReader.Create(preXML, settingsNewR0))
+            {
+                using (XmlWriter writer0 = XmlWriter.Create(PreStreamOut, settingNewW0))
+                {
+                    writer0.WriteStartDocument();
+                    while (reader0.Read())
+                    {
+                        switch (reader0.NodeType)
+                        {
+                            case XmlNodeType.Whitespace:
+                                break;
+
+                            case XmlNodeType.Element:
+                                if (reader0.HasAttributes)
+                                {
+                                    writer0.WriteStartElement(reader0.Name);
+                                    if (reader0.GetAttribute("lang") != null)
+                                    {
+                                        writer0.WriteAttributeString("lang", reader0.GetAttribute("lang"));
+                                    }
+                                    if (reader0.GetAttribute("type") != null)
+                                    {
+                                        writer0.WriteAttributeString("type", reader0.GetAttribute("type"));
+                                    }
+                                    if (reader0.GetAttribute("multimedia") != null)
+                                    {
+                                        writer0.WriteAttributeString("multimedia", reader0.GetAttribute("multimedia"));
+                                    }
+                                }
+                                else
+                                {
+                                    writer0.WriteStartElement(reader0.Name);
+                                }
+                                break;
+
+
+                            case XmlNodeType.Text:
+                                writer0.WriteString(reader0.Value);
+                                break;
+
+                            case XmlNodeType.EndElement:
+                                writer0.WriteEndElement();
+                                break;
+
+                        }
+                    }
+                }
+            }
+        }
 
         public static int findIndex(List<string[]> ValGrpTemp, string currentContent)
         {
@@ -845,15 +1260,266 @@ namespace Csh_mt2tbx
             return -1; // Did not find content in Value-Groups, indicate that default must be used 
         }
 
+        public static void recursivePrinter(XmlNode n, XmlWriter writer0)
+        {
+            int textCount = 0;
+            int elementCount = 0;
+            int nonWhiteCounter = 0;
+            string scrapeAllText;
+
+            if (n.Name == "language")
+            {
+                writer0.WriteStartElement(n.Name);
+                writer0.WriteAttributeString("lang", n.Attributes["lang"].Value);
+                writer0.WriteAttributeString("type", n.Attributes["type"].Value);
+                writer0.WriteString("TEMPORARY CONTENT");
+                writer0.WriteEndElement();
+                return;
+            }
+
+            for (int p = 0; p < n.ChildNodes.Count; p++)
+            {
+                if (n.ChildNodes[p].NodeType != XmlNodeType.Whitespace)
+                {
+                    nonWhiteCounter++;
+                }
+            }
+
+            if (nonWhiteCounter > 0) // Filter out emptied descripGrp tags
+            {
+                writer0.WriteStartElement(n.Name);
+            }
+            else
+            {
+                return;
+            }
+
+            if (n.Attributes["type"] != null)
+            {
+                writer0.WriteAttributeString("type", n.Attributes["type"].Value);
+            }
+
+            if (n.Attributes["multimedia"] != null)
+            {
+                writer0.WriteAttributeString("multimedia", n.Attributes["multimedia"].Value);
+            }
+
+            if ((n.ChildNodes.Count == 3 && n.ChildNodes[1].NodeType == XmlNodeType.Text) || (n.ChildNodes.Count == 1 && n.ChildNodes[0].NodeType == XmlNodeType.Text) || (n.ChildNodes.Count == 3 && n.ChildNodes[1].NodeType == XmlNodeType.Element && n.ChildNodes[2].NodeType == XmlNodeType.Text)) // Whitespace, Text, Whitespace
+            {
+                scrapeAllText = n.InnerText;
+
+                if (scrapeAllText.Contains("\n"))
+                {
+                    scrapeAllText = Regex.Replace(scrapeAllText, @"\n", "");
+                }
+                writer0.WriteString(scrapeAllText);
+            }
+            else
+            {
+                for (int k = 0; k < n.ChildNodes.Count; k++)
+                {
+                    if (n.ChildNodes[k].NodeType == XmlNodeType.Element)
+                    {
+                        elementCount++;
+                    }
+                    else if (n.ChildNodes[k].NodeType == XmlNodeType.Text)
+                    {
+                        textCount++;
+                    }
+                }
+
+                if (textCount >= 1 && elementCount >= 1) // Both Text and Elements were found, must contain xrefs, scrape, print and move on
+                {
+                    scrapeAllText = n.InnerText;
+
+                    if (scrapeAllText.Contains("\n"))
+                    {
+                        scrapeAllText = Regex.Replace(scrapeAllText, @"\n", "");
+                    }
+                    writer0.WriteString(scrapeAllText);
+                    writer0.WriteEndElement();
+                    return;
+                }
+            }
+
+
+            if (n.ChildNodes.Count == 3 && n.ChildNodes[1].NodeType == XmlNodeType.Element && n.ChildNodes[2].NodeType == XmlNodeType.Text)
+            {
+                writer0.WriteEndElement();
+                return;
+            }
+
+            if (n.HasChildNodes)
+            {
+                for (int i = 0; i < n.ChildNodes.Count; i++)
+                {
+                    if (n.ChildNodes[i].NodeType != XmlNodeType.Whitespace && n.ChildNodes[i].NodeType != XmlNodeType.Text)
+                    {
+                        recursivePrinter(n.ChildNodes[i], writer0);
+                    }
+                }
+            }
+
+            writer0.WriteEndElement();
+        }
+
+        public static void recursiveDescent(Dictionary<string, string[]> masterQueueOrders, XmlNode n, XmlDocument docA)
+        {
+            if (n.HasChildNodes)
+            {
+                // Scanning Loop
+                for (int k = 0; k < n.ChildNodes.Count; k++)
+                {
+                    if (n.ChildNodes[k].NodeType == XmlNodeType.Whitespace || n.ChildNodes[k].NodeType == XmlNodeType.Text)
+                    {
+                        continue;
+                    }
+
+                    if (n.Attributes["multimedia"] != null)
+                    {
+                        for (int i = 0; i < n.ChildNodes.Count; i++)
+                        {
+                            if (n.ChildNodes[i].NodeType == XmlNodeType.Whitespace)
+                            {
+                                continue;
+                            }
+
+                            if (n.ChildNodes[i].Attributes["type"] != null && n.ChildNodes[i].Attributes["type"].Value == "Graphic")
+                            {
+                                XmlAttribute newAtt = docA.CreateAttribute("multimedia");
+                                newAtt.Value = n.Attributes["multimedia"].Value;
+                                n.ChildNodes[i].Attributes.Append(newAtt);
+                            }
+                        }
+                    }
+
+                    if (n.ChildNodes[k].Attributes["type"] != null && masterQueueOrders.ContainsKey(n.ChildNodes[k].Attributes["type"].Value))
+                    {
+                        string storeElementName = n.ChildNodes[k].Name;
+                        string storeEncounteredBundle = n.ChildNodes[k].Attributes["type"].Value;
+                        string encounteredBundleText = n.ChildNodes[k].InnerText;
+                        string[] currentBundleArray = masterQueueOrders[storeEncounteredBundle];
+                        string storeCompanionBundle;
+                        string companionBundleText;
+                        if (currentBundleArray[0] == storeEncounteredBundle)
+                        {
+                            storeCompanionBundle = currentBundleArray[1];
+                        }
+                        else
+                        {
+                            storeCompanionBundle = currentBundleArray[0];
+                        }
+                        string storeBundleDirections = currentBundleArray[2];
+                        bool foundCompanionBundle = false;
+
+                        int indexOfChange = 0;
+                        XmlNode nextNode;
+                        XmlNode foundPartner = null;
+
+
+                        // 1) Check the sibling nodes for the other value or try 2)
+
+                        for (int u = k; u < n.ChildNodes.Count; u++)
+                        {
+                            if (n.ChildNodes[u].NodeType == XmlNodeType.Whitespace)
+                            {
+                                continue;
+                            }
+
+                            if (n.ChildNodes[u].Attributes["type"] != null && n.ChildNodes[u].Attributes["type"].Value == storeCompanionBundle)
+                            {
+                                companionBundleText = n.ChildNodes[u].InnerText;
+                                indexOfChange = u; // Come to this spot to remove the info later
+                                foundPartner = n.ChildNodes[u];
+                                n.RemoveChild(n.ChildNodes[u]);
+                                foundCompanionBundle = true;
+                            }
+                        }
+
+                        // 2) Grab parentNode and call nextSibling and check its children until we've found the matching att or die
+
+                        if (foundCompanionBundle == false)
+                        {
+                            nextNode = n;
+                            while (((nextNode = nextNode.NextSibling) != null) && foundCompanionBundle == false)
+                            {
+                                for (int v = 0; v < nextNode.ChildNodes.Count; v++)
+                                {
+                                    if (nextNode.ChildNodes[v].NodeType == XmlNodeType.Whitespace)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (nextNode.ChildNodes[v].Attributes["type"] != null && nextNode.ChildNodes[v].Attributes["type"].Value == storeCompanionBundle)
+                                    {
+                                        companionBundleText = nextNode.ChildNodes[v].InnerText;
+                                        indexOfChange = v; // Come to this spot to remove the info later
+                                        foundPartner = nextNode.ChildNodes[v];
+                                        nextNode.RemoveChild(nextNode.ChildNodes[v]);
+                                        foundCompanionBundle = true;
+                                    }
+                                }
+                            }
+                            if (foundCompanionBundle == false)
+                            {
+                                // Ran out of siblings and still didn't find it... not sure where to look now!
+                            }
+                        }
+
+
+                        // 3) Process the changes with XmlNode Methods and Properties
+                        // Interesting discovery: The mapping file should make all the necessary changes with the name and att, I might just need to put the right nodes in the right place?
+
+                        if (foundCompanionBundle == true)
+                        {
+                            n.InsertAfter(foundPartner, n.ChildNodes[k]);
+                        }
+
+                    }
+                    else
+                    {
+                        if (n.ChildNodes[k].HasChildNodes)
+                        {
+                            recursiveDescent(masterQueueOrders, n.ChildNodes[k], docA);
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void queueInjection(FileStream preXML, FileStream postXML, levelOneClass initialJSON)
+        {
+            XmlReaderSettings settingsNewR = new XmlReaderSettings();
+            XmlWriterSettings settingNewW = new XmlWriterSettings() { Indent = true, IndentChars = "\t" };
+            XmlDocument docA = new XmlDocument();
+            Dictionary<string, string[]> m = initialJSON.getQueueOrders();
+
+            using (XmlReader reader0 = XmlReader.Create(preXML, settingsNewR))
+            {
+                using (XmlWriter writer0 = XmlWriter.Create(postXML, settingNewW))
+                {
+                    writer0.WriteStartDocument();
+                    while (reader0.Name != "mtf")
+                    {
+                        reader0.Read();
+                    }
+                    XmlNode alpha = docA.ReadNode(reader0);
+                    recursiveDescent(m, alpha, docA);
+
+                    recursivePrinter(alpha, writer0);
+                }
+            }
+        }
+
         public static void startXMLImport(FileStream inXML, FileStream outXML, levelOneClass initialJSON)
         {
-            XmlWriterSettings settingW = new XmlWriterSettings() { Indent = true, IndentChars = " "};
+            XmlWriterSettings settingW = new XmlWriterSettings() { Indent = true, IndentChars = "\t" };
             // We dont hope for a fragment, but I need this for debugging
             settingW.ConformanceLevel = ConformanceLevel.Auto;
             XmlReaderSettings settingsR = new XmlReaderSettings();
             string d = initialJSON.getDialect(); // ****
             string x = initialJSON.getXCS();    // ****
-            Dictionary<string, object> grandMasterD = new Dictionary<string, object> ();
+            Dictionary<string, object> grandMasterD = new Dictionary<string, object>();
             grandMasterD = initialJSON.getMasterDictionary();
             string storeAttribute;
             int teaspIndex = 0;
@@ -863,7 +1529,7 @@ namespace Csh_mt2tbx
             string placement = "";
             string currentContent = "";
             string stringSub = "";
-            Dictionary<string,string> stringOther = new Dictionary<string, string> ();
+            Dictionary<string, string> stringOther = new Dictionary<string, string>();
             string stringValue = "";
 
             List<string[]> ValGrpTemp;
@@ -873,14 +1539,18 @@ namespace Csh_mt2tbx
             teaspWithSub castWith;
             List<string> xrefPairs = new List<string>();
             XmlDocument doc = new XmlDocument();
+            List<int> usedNodesAndChildren = new List<int>();
+            List<int> everythingElse = new List<int>();
+            List<int> onlyChildLocation = new List<int>();
+            List<XmlNode> onlyChild = new List<XmlNode>();
 
-            string storeAtt;
+            Dictionary<string, string[]> masterQueueOrders = initialJSON.getQueueOrders();
+
+            string storeAtt = "";
             string storeSecondAtt;
-            string storeContent;
-            string storeDateContent;
+            string storeContent = "";
+            string storeDateContent = "";
             string scrapeAllText;
-            string scrapeAllXML;
-            string rPattern = "<.[^><.)]+>";
 
             using (XmlReader reader = XmlReader.Create(inXML, settingsR))
             {
@@ -907,7 +1577,7 @@ namespace Csh_mt2tbx
                                     writer.WriteStartElement("fileDesc");
                                     writer.WriteStartElement("sourceDesc");
                                     writer.WriteStartElement("p");
-                                    writer.WriteString("Auto-converted from Multiterm XML");
+                                    writer.WriteString("Auto-converted from MultiTerm XML");
 
                                     writer.WriteEndElement(); // Closes <p>
 
@@ -933,35 +1603,53 @@ namespace Csh_mt2tbx
 
                                     break;
 
-                                }
+                                }  // Good
 
-                                if (reader.HasAttributes && reader.GetAttribute("multimedia") != null)
+                                if (reader.HasAttributes && reader.GetAttribute("multimedia") != null && reader.Name == "descripGrp")
                                 {
                                     writer.WriteStartElement(reader.Name);
-                                    writer.WriteAttributeString("multimedia", reader.GetAttribute("multimedia"));
                                     break;
-                                }
+                                } // Probably Good
 
-                                if (reader.Name == "language") // I think we'll need a special call for Locale-codes that are lacking
+                                if (reader.Name == "language")
                                 {
-                                    storeAtt = reader.GetAttribute("lang");
-                                    storeSecondAtt = reader.GetAttribute("type");
-                                    writer.WriteStartElement(reader.Name); // NOT DONE
+                                    XmlNode f = doc.ReadNode(reader);
+
+                                    storeAtt = f.Attributes["lang"].Value;
+                                    storeSecondAtt = f.Attributes["type"].Value;
+                                    writer.WriteStartElement(f.Name); // NOT DONE
                                     writer.WriteAttributeString("lang", storeAtt);
                                     writer.WriteAttributeString("type", storeSecondAtt);
                                     writer.WriteString("TEMPORARY CONTENT");
-                                    break;
-                                }
+                                    writer.WriteEndElement();
 
-                                if (reader.Name != "mtf" && reader.Name != "transac" && reader.HasAttributes) // We have found a winner!
+                                    if (reader.NodeType == XmlNodeType.Element)
+                                    {
+                                        writer.WriteStartElement(reader.Name);
+                                    }
+                                    else if (reader.NodeType == XmlNodeType.EndElement)
+                                    {
+                                        writer.WriteEndElement();
+                                    }
+
+                                    break;
+                                } // Probably good
+
+                                if (reader.Name != "mtf" && reader.Name != "transac" && reader.HasAttributes && reader.GetAttribute("type") != null) // We have found a winner!
                                 {
                                     storeAttribute = reader.GetAttribute("type");
-                                    if(grandMasterD.ContainsKey(storeAttribute)) // Time to process
+                                    if (grandMasterD.ContainsKey(storeAttribute)) // Time to process
                                     {
+                                        string saveMedia = "";
+                                        bool foundMedia = false;
                                         string saveNodeName = reader.Name;
+                                        if (reader.GetAttribute("multimedia") != null)
+                                        {
+                                            saveMedia = reader.GetAttribute("multimedia");
+                                            foundMedia = true;
+                                        }
                                         XmlNode node = doc.ReadNode(reader);
                                         scrapeAllText = node.InnerText;
-                                        scrapeAllXML = node.InnerXml;
 
                                         // Clean-up the text for new-lines
                                         if (scrapeAllText.Contains("\n"))
@@ -969,22 +1657,15 @@ namespace Csh_mt2tbx
                                             scrapeAllText = Regex.Replace(scrapeAllText, @"\n", "");
                                         }
 
-                                        bool hasXML = Regex.IsMatch(scrapeAllXML, rPattern);
-
-                                        if(!hasXML)
-                                        { // Plain Content
-                                            currentContent = scrapeAllText;
-                                        }
-                                        else  
+                                        currentContent = scrapeAllText;
+                                        if (currentContent.Contains("|"))
                                         {
-                                            // The next element is therefore another element, probably xref inside a descrip
-                                            writer.WriteStartElement("admin");
-                                            writer.WriteAttributeString("type", "source");
-                                            writer.WriteString(scrapeAllText);
-                                            writer.WriteEndElement();
-                                            xrefPairs.Clear();
-                                            break;
+                                            string patt = @"\|[\w\d\s]*";
+                                            Match match = Regex.Match(currentContent, patt);
+                                            string saveBadText = match.Groups[0].Value;
+                                            currentContent = currentContent.Replace(saveBadText, "");
                                         }
+
 
                                         // Determine typeof and cast
 
@@ -1002,7 +1683,7 @@ namespace Csh_mt2tbx
                                             string hold = match1.Groups[0].Value;
                                             hold = hold.Substring(1);
 
-                                            if(hold != saveNodeName)
+                                            if (hold != saveNodeName)
                                             {
                                                 saveNodeName = hold;
                                             }
@@ -1014,10 +1695,22 @@ namespace Csh_mt2tbx
                                             string att = match2.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
 
                                             writer.WriteAttributeString("type", att); // Give it its attributes
+                                            if (foundMedia)
+                                            {
+                                                writer.WriteAttributeString("multimedia", saveMedia);
+                                            }
                                             writer.WriteString(currentContent);
 
                                             // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
                                             writer.WriteEndElement();
+                                            if (reader.NodeType == XmlNodeType.Element)
+                                            {
+                                                writer.WriteStartElement(reader.Name);
+                                            }
+                                            else if (reader.NodeType == XmlNodeType.EndElement)
+                                            {
+                                                writer.WriteEndElement();
+                                            }
                                         }
                                         if (grandMasterD[storeAttribute].GetType() == typeof(teaspWithSub))
                                         {
@@ -1045,10 +1738,22 @@ namespace Csh_mt2tbx
                                             string att = match2.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
 
                                             writer.WriteAttributeString("type", att); // Give it its attributes
+                                            if (foundMedia)
+                                            {
+                                                writer.WriteAttributeString("multimedia", saveMedia);
+                                            }
                                             writer.WriteString(stringValue);
 
                                             // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
                                             writer.WriteEndElement();
+                                            if (reader.NodeType == XmlNodeType.Element)
+                                            {
+                                                writer.WriteStartElement(reader.Name);
+                                            }
+                                            else if (reader.NodeType == XmlNodeType.EndElement)
+                                            {
+                                                writer.WriteEndElement();
+                                            }
                                         }
                                         if (grandMasterD[storeAttribute].GetType() == typeof(extendedTeaspStorageManager)) // Has Value Groups
                                         {
@@ -1099,10 +1804,22 @@ namespace Csh_mt2tbx
                                                 string att = match.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
 
                                                 writer.WriteAttributeString("type", att); // Give it its attributes
+                                                if (foundMedia)
+                                                {
+                                                    writer.WriteAttributeString("multimedia", saveMedia);
+                                                }
                                                 writer.WriteString(stringValue);
 
                                                 // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
                                                 writer.WriteEndElement();
+                                                if (reader.NodeType == XmlNodeType.Element)
+                                                {
+                                                    writer.WriteStartElement(reader.Name);
+                                                }
+                                                else if (reader.NodeType == XmlNodeType.EndElement)
+                                                {
+                                                    writer.WriteEndElement();
+                                                }
                                             }
                                             else if (teaspIndex == -1)
                                             {
@@ -1129,10 +1846,22 @@ namespace Csh_mt2tbx
                                                 string att = match.Groups[1].Value; // Not checking for errors here which hopefully isnt a problem
 
                                                 writer.WriteAttributeString("type", att); // Give it its attributes
+                                                if (reader.GetAttribute("multimedia") != null)
+                                                {
+                                                    writer.WriteAttributeString("multimedia", reader.GetAttribute("multimedia"));
+                                                }
                                                 writer.WriteString(currentContent);
 
                                                 // When we store the element content, we advance the reader and so the end tag is skipped, so we must close the tag now
                                                 writer.WriteEndElement();
+                                                if (reader.NodeType == XmlNodeType.Element)
+                                                {
+                                                    writer.WriteStartElement(reader.Name);
+                                                }
+                                                else if (reader.NodeType == XmlNodeType.EndElement)
+                                                {
+                                                    writer.WriteEndElement();
+                                                }
                                             }
 
                                         }
@@ -1141,12 +1870,23 @@ namespace Csh_mt2tbx
                                     break;
                                 }
 
-                                if (reader.Name == "transac") // Gotta hardcode this guy, doesnt appear in a JSON mapping file
+                                if (reader.Name == "transacGrp") // Gotta hardcode this guy, doesnt appear in a JSON mapping file
                                 {
+
+                                    while (reader.Name != "transac")
+                                    {
+                                        reader.Read();
+                                    }
                                     storeAtt = reader.GetAttribute("type");
                                     storeContent = reader.ReadElementContentAsString();
-                                    reader.ReadToNextSibling("date"); // ** ReadToNextSibling or ReadToFollowing???
+
+                                    while (reader.Name != "date")
+                                    {
+                                        reader.Read();
+                                    }
                                     storeDateContent = reader.ReadElementContentAsString();
+
+                                    writer.WriteStartElement("transacGrp");
 
                                     writer.WriteStartElement("transac");
                                     writer.WriteAttributeString("type", "transactionType");
@@ -1154,7 +1894,7 @@ namespace Csh_mt2tbx
                                     writer.WriteEndElement();
 
                                     writer.WriteStartElement("transacNote");
-                                    writer.WriteAttributeString("type", "Responsability");
+                                    writer.WriteAttributeString("type", "responsibility");
                                     writer.WriteString(storeContent);
                                     writer.WriteEndElement();
 
@@ -1162,32 +1902,36 @@ namespace Csh_mt2tbx
                                     writer.WriteString(storeDateContent);
                                     writer.WriteEndElement();
 
+                                    if (!(reader.NodeType == XmlNodeType.Whitespace))
+                                    {
+                                        writer.WriteEndElement();
+                                    }
+
                                     break;
-                                }
+                                }  // Probably Good
 
                                 if (reader.Name != "mtf" && !(reader.HasAttributes)) // Plain-Jane Element
                                 {
                                     writer.WriteStartElement(reader.Name);
                                     // We used to write the element content, but that advances the parser so we'll do it later on now
                                     break;
-                                }
+                                } // Probably Good
 
                                 break;
 
-                            case XmlNodeType.EndElement: // Check to see if the current element is still open before closing anything
+                            case XmlNodeType.EndElement:
 
-                                    writer.WriteEndElement();
-                                    break;
+                                writer.WriteEndElement();
+                                break;
 
                             case XmlNodeType.Text:
-
                                 writer.WriteString(reader.Value);
 
                                 break;
 
-                          /*  case XmlNodeType.Whitespace:
+                                /*  case XmlNodeType.Whitespace:
 
-                                break; */
+                                      break; */
                         }
                     }
 
@@ -1213,10 +1957,205 @@ namespace Csh_mt2tbx
             }
         }
 
+        public static void descendAndPrint(XmlNode g, XmlWriter writer2)
+        {
+            string storeAtt = "";
+            bool unwritten = false;
+            int depthTracker = 0;
+            int descripCounter = 0;
+
+
+            if (g.Attributes["type"] != null && g.Name != "descripGrp") // Hold off on descripGrp until we know if it has multiple children
+            {
+                storeAtt = g.Attributes["type"].Value;
+                writer2.WriteStartElement(g.Name);
+                writer2.WriteAttributeString("type", storeAtt);
+            }
+            else
+            {
+                if (g.Name != "descripGrp")
+                {
+                    writer2.WriteStartElement(g.Name);
+                }
+            }
+
+            if (g.HasChildNodes && g.ChildNodes.Count > 1) // Dangerous bet: If it just has text it will only have 1 child, otherwise it should have more?
+            {
+                for (int i = 0; i < g.ChildNodes.Count; i++)
+                {
+
+                    if (g.ChildNodes[i].NodeType == XmlNodeType.Whitespace)
+                    {
+                        continue;
+                    }
+
+                    if (g.ChildNodes[i].NodeType == XmlNodeType.Element) // This should act as a shield to any whitespace or text values that would otherwise appear
+                    {
+                        if (g.ChildNodes[i].Name == "descripGrp")
+                        {
+                            XmlNode deeper = g.ChildNodes[i]; // Made of the node of the current child, we need to look at its children
+
+
+
+                            // NEW ADDITION: Scan for destructive Nodes
+
+                            for (int y = 0; y < deeper.ChildNodes.Count; y++)  // As of right now the only encountered destructive nodes are: adminNote
+                            {
+                                if (deeper.ChildNodes[y].Name == "adminNote") // Collect the Node and it's bundling partner
+                                {
+                                    XmlNode findPartner;
+                                    XmlNode destructiveNode = deeper.ChildNodes[y];
+
+                                    if (deeper.ChildNodes[y - 2].Name == "note" || deeper.ChildNodes[y - 2].Name == "admin")
+                                    {
+                                        findPartner = deeper.ChildNodes[y - 2];
+                                    }
+                                    else if (deeper.ChildNodes[y + 2].Name == "note" || deeper.ChildNodes[y + 2].Name == "admin")
+                                    {
+                                        findPartner = deeper.ChildNodes[y + 2];
+                                    }
+                                    else
+                                    {
+                                        throw new System.InvalidOperationException("Cannot Find appropraite bundle for misplaced tag"); // Hope this never happens
+                                    }
+
+                                    // deeper.RemoveChild(deeper.ChildNodes[y]);
+                                    // deeper.RemoveChild(findPartner);
+
+
+                                    // We cannot create a new node from scratch, so flag the pair to be renamed when writing
+
+                                    findPartner.Attributes["type"].Value = "annotatedNoteFLAG";
+                                    // Blow-up the Node it was inside
+                                    deeper.RemoveAll();
+
+                                    g.AppendChild(findPartner);
+                                    g.AppendChild(destructiveNode);
+                                }
+                            }
+
+                            //
+
+                            for (int j = 0; j < deeper.ChildNodes.Count; j++)
+                            {
+                                descripCounter = 0;
+
+                                if (deeper.ChildNodes[j].NodeType == XmlNodeType.Whitespace)
+                                {
+                                    continue;
+                                }
+
+                                if (deeper.ChildNodes[j].Name == "descrip" || deeper.ChildNodes[j].Name == "admin" || deeper.ChildNodes[j].Name == "termNote" || deeper.ChildNodes[j].Name == "note")
+                                {
+                                    unwritten = true;
+                                    if (deeper.ChildNodes[j].Name == "termNote")
+                                    {
+                                        writer2.WriteStartElement("termNote");
+                                        writer2.WriteAttributeString("type", deeper.ChildNodes[j].Attributes["type"].Value);
+                                        writer2.WriteString(deeper.ChildNodes[j].InnerText);
+                                        writer2.WriteEndElement();
+                                        continue;
+                                    }
+
+                                    string name = deeper.ChildNodes[j].Name;
+                                    string attribute = deeper.ChildNodes[j].Attributes["type"].Value;
+                                    string text = deeper.ChildNodes[j].InnerText;
+
+                                    if (deeper.ChildNodes[j + 2] == null) // Check 2 ahead for more elements, 1 for whitespace, 1 to arrive at next possible element
+                                    { // The admin or descrip does not need to be in the descripGrp tag, and will be output without it
+                                        writer2.WriteStartElement(name);
+                                        if (attribute != "")
+                                        {
+                                            writer2.WriteAttributeString("type", attribute);
+                                        }
+                                        writer2.WriteString(text);
+                                        writer2.WriteEndElement();
+                                        j++;
+                                        continue;
+                                    }
+                                    else // There is more inside this descrip, so write what we picked up and let it keep reading
+                                    {
+                                        for (int y = 0; y < deeper.ChildNodes.Count; y++)
+                                        {
+                                            if (deeper.ChildNodes[y].Name == "descrip")
+                                            {
+                                                descripCounter++;
+                                            }
+                                        }
+
+                                        if (descripCounter > 1)
+                                        {
+                                            writer2.WriteStartElement(name);
+                                            writer2.WriteAttributeString("type", attribute);
+                                            writer2.WriteString(text);
+                                            writer2.WriteEndElement();
+                                            // skip depthTracker bc we dont want the descripGrp tag
+                                        }
+                                        else
+                                        {
+                                            if (depthTracker == 0)
+                                            {
+                                                writer2.WriteStartElement("descripGrp");
+                                            }
+                                            writer2.WriteStartElement(name);
+                                            writer2.WriteAttributeString("type", attribute);
+                                            writer2.WriteString(text);
+                                            writer2.WriteEndElement();
+                                            depthTracker++;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (unwritten == false)
+                                    {
+                                        writer2.WriteStartElement("descripGrp");
+                                    }
+                                    XmlNode p = deeper.ChildNodes[j];
+                                    descendAndPrint(p, writer2);
+                                }
+                            }
+                            if (depthTracker > 0)
+                            {
+                                writer2.WriteEndElement();
+                                depthTracker = 0;
+                            }
+                        }
+                        else
+                        {
+                            XmlNode k = g.ChildNodes[i];
+                            descendAndPrint(k, writer2);
+                        }
+                    }
+
+                    if (g.ChildNodes[i].NodeType == XmlNodeType.Text)
+                    {
+                        writer2.WriteString(g.ChildNodes[i].InnerText);
+                    }
+
+                    if (g.ChildNodes[i].NodeType == XmlNodeType.EndElement)
+                    {
+                        writer2.WriteEndElement();
+                        continue;
+                    }
+
+                }
+            }
+            else
+            {
+                writer2.WriteString(g.InnerText);
+            }
+
+
+            writer2.WriteEndElement();
+
+        }
+
         public static void reorderTBX(FileStream inOutXML, FileStream orderTBX)
         {
             XmlReaderSettings settingsNewR = new XmlReaderSettings();
-            XmlWriterSettings settingNewW = new XmlWriterSettings() { Indent = true, IndentChars = "\t" }; // I like tab.
+            XmlWriterSettings settingNewW = new XmlWriterSettings() { Indent = true, IndentChars = "\t" };
+            XmlDocument doc2 = new XmlDocument();
             string storeatt;
             string storeID;
 
@@ -1225,37 +2164,66 @@ namespace Csh_mt2tbx
                 using (XmlWriter writer2 = XmlWriter.Create(orderTBX, settingNewW))
                 {
                     writer2.WriteStartDocument();
-                    writer2.WriteDocType("martif", null, null, "TBXcoreStructV02.dtd"); // DocType Declaration
-                    while(reader2.Read())
+                    writer2.WriteDocType("martif", null, "TBXcoreStructV03.dtd", null); // DocType Declaration
+                    while (reader2.Read())
                     {
-                        switch(reader2.NodeType)
+                        switch (reader2.NodeType)
                         {
                             case XmlNodeType.Element:
 
+                                if (reader2.Name == "termGrp")
+                                {
+                                    // termGrp will need to be changed
+                                    // Check for termNotes that need to be first after term
+                                    // #Recursion Magic
 
+                                    XmlNode n = doc2.ReadNode(reader2); // n now has the entire termGrp and all work must be done with n, since reader2 has moved on to the next element after the entire termGrp and its children
+                                    descendAndPrint(n, writer2);
+                                    break;
+                                }
 
-
-                                if (reader2.Name == "descripGrp") // This one is important, often admin and descrip tags are isolated in descripGrp's that dont need to be
+                                if (reader2.Name == "descripGrp")
                                 {
                                     reader2.Read();
-                                    while(reader2.NodeType == XmlNodeType.Whitespace)
+                                    while (reader2.NodeType == XmlNodeType.Whitespace)
                                     {
                                         reader2.Read();
                                     }
-                                    if(reader2.Name == "descrip" || reader2.Name == "admin" || reader2.Name == "termNote")
+                                    if (reader2.Name == "descrip" || reader2.Name == "admin" || reader2.Name == "termNote" || reader2.Name == "note" || reader2.Name == "xref")
                                     {
+                                        if (reader2.Name == "termNote")
+                                        {
+                                            // Should not occur outside termGrp
+                                        }
+
                                         string name = reader2.Name;
                                         string attribute = reader2.GetAttribute("type");
+                                        string saveMedia = "";
+                                        bool foundMedia = false;
+                                        if (reader2.Name == "xref" && reader2.GetAttribute("multimedia") != null)
+                                        {
+                                            saveMedia = reader2.GetAttribute("multimedia");
+                                            foundMedia = true;
+                                        }
                                         string text = reader2.ReadElementContentAsString();
+
                                         reader2.Read();
-                                        while(reader2.NodeType == XmlNodeType.Whitespace)
+                                        while (reader2.NodeType == XmlNodeType.Whitespace)
                                         {
                                             reader2.Read();
                                         }
-                                        if(reader2.Name == "descripGrp" && reader2.NodeType == XmlNodeType.EndElement)
+
+                                        if (reader2.Name == "descripGrp" && reader2.NodeType == XmlNodeType.EndElement)
                                         { // The admin or descrip does not need to be in the descripGrp tag, and will be output without it
                                             writer2.WriteStartElement(name);
-                                            writer2.WriteAttributeString("type", attribute);
+                                            if (attribute != "")
+                                            {
+                                                writer2.WriteAttributeString("type", attribute);
+                                            }
+                                            if (foundMedia)
+                                            {
+                                                writer2.WriteAttributeString("multimedia", saveMedia);
+                                            }
                                             writer2.WriteString(text);
                                             writer2.WriteEndElement();
                                             reader2.Read();
@@ -1266,28 +2234,30 @@ namespace Csh_mt2tbx
                                             writer2.WriteStartElement("descripGrp");
                                             writer2.WriteStartElement(name);
                                             writer2.WriteAttributeString("type", attribute);
+                                            if (foundMedia)
+                                            {
+                                                writer2.WriteAttributeString("multimedia", saveMedia);
+                                            }
                                             writer2.WriteString(text);
                                             writer2.WriteEndElement();
+                                            writer2.WriteStartElement(reader2.Name);
+                                            if (reader2.GetAttribute("type") != null)
+                                            {
+                                                writer2.WriteAttributeString("type", reader2.GetAttribute("type"));
+                                            }
                                         }
 
-
+                                        break;
                                     }
                                     else
                                     {
                                         writer2.WriteStartElement("descripGrp");
+                                        break;
                                     }
-                                    
+
                                 }
 
-
-                                if (reader2.Name == "termGrp")
-                                {
-                                    writer2.WriteStartElement("tig");
-                                    break;
-                                }
-
-
-                                if (reader2.Name == "languageGrp")
+                                if (reader2.Name == "languageGrp") // LEAVE HERE
                                 {
                                     reader2.Read(); // Whitespace
                                     reader2.Read(); // Language
@@ -1302,8 +2272,7 @@ namespace Csh_mt2tbx
                                     break;
                                 }
 
-
-                                if (reader2.Name == "conceptGrp")
+                                if (reader2.Name == "conceptGrp") // LEAVE HERE
                                 {
                                     // We need the Text Value of the concept child, so we must manually advance the reader
                                     reader2.Read(); // Whitespace
@@ -1320,15 +2289,13 @@ namespace Csh_mt2tbx
                                     break;
                                 }
 
-
-                                if(reader2.HasAttributes)
+                                if (reader2.HasAttributes)
                                 {
                                     storeatt = reader2.GetAttribute("type");
                                     writer2.WriteStartElement(reader2.Name);
                                     writer2.WriteAttributeString("type", storeatt);
                                     break;
                                 }
-
 
                                 if (!(reader2.HasAttributes)) // We'll probably need several cases for when to not accept the element above this
                                 {
@@ -1352,7 +2319,6 @@ namespace Csh_mt2tbx
 
         }
 
-
         public static string readFile(string type) // Start Here
         {
             string fn = "";
@@ -1374,6 +2340,9 @@ namespace Csh_mt2tbx
         public static void deserializeFile(string filename1, string filename2)
         {
             string text = File.ReadAllText(filename1);
+            string injectFile;
+            string prettyFile;
+            string finalLocation;
 
             JArray data = (JArray)JsonConvert.DeserializeObject(text);
 
@@ -1388,13 +2357,36 @@ namespace Csh_mt2tbx
             initialJSON.parseCMap();
 
             //Import XML File
-            FileStream inXML = File.OpenRead(filename2);
+            FileStream preXML = File.OpenRead(filename2);
             string removeFile = System.IO.Path.GetFileName(filename2);
+            prettyFile = filename2.Replace(removeFile, "prettyXML.xml");
+            injectFile = filename2.Replace(removeFile, "InjectedTBX.tbx");
+            finalLocation = filename2.Replace(removeFile, "FinalizedTBX.tbx");
             removeFile = filename2.Replace(removeFile, "ConveretedTBX.tbx");
+            FileStream prePostXML = File.Create(prettyFile);
+            FileStream postXML = File.Create(injectFile);
             FileStream outXML = File.Create(removeFile);
+            FileStream outFinal = File.Create(finalLocation);
             string outFileName = removeFile.Replace("ConveretedTBX.tbx", "OrderedTBX.tbx");
             FileStream orderXML = File.Create(outFileName); // Keep the reorder method seperate, possibly close and reopen Converted file for only reading?
 
+            // Pre-Pre-Process for Broken XML files
+            prettyPreProcess(preXML, prePostXML);
+
+            // Close for writing
+            prePostXML.Close();
+
+            FileStream preInXML = File.OpenRead(prettyFile);
+
+            // Pre-Process for Queue-Bundling Orders 
+            queueInjection(preInXML, postXML, initialJSON);
+
+            // Close postXML for Writing
+            postXML.Close();
+
+            FileStream inXML = File.OpenRead(injectFile);
+
+            // Initial Processing
             startXMLImport(inXML, outXML, initialJSON); // FINISHED
 
             // Close outXML for Writing
@@ -1405,8 +2397,20 @@ namespace Csh_mt2tbx
 
             reorderTBX(inOutXML, orderXML);
 
-            inXML.Close();
-            // orderXML.Close();
+            // Close orderXML for writing
+            orderXML.Close();
+
+            FileStream finalIn = File.OpenRead(outFileName); // Problem here
+
+            finalProcesses(finalIn, outFinal);
+
+            // Close final file
+            outFinal.Close();
+
+            addColon(finalLocation);
+
+            // Close a bunch of Files 
+            preXML.Close();
         }
     }
 }
