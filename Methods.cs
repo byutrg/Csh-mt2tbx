@@ -15,20 +15,11 @@ using Microsoft.Win32;
 /// <summary>
 /// This is the C# script of the Multiterm to TBX converter. It accepts a JSON mapping file and an XML TBX file and returns a properly formatted TBX file as its output.
 /// 
-/// Currently only the JSON file parsing methods are in place.
+/// Currently the program is functional, and has no known current errors 
 /// 
 /// Known limitations:
 /// 
-/// MINOR
-/// 
-/// ** The teasp class does not account for the possibility of an object for the substitution value
-/// ** Queue-draining does not account for the lack of any of the 3 possible keys: conceptGrp, languageGrp, and termGrp
-/// 
-/// CRITICAL
-/// 
-/// ** The conversion of the one-level mapping from a JObject to a dictionary is assumed to maintain all subsequent data, but is not tested. 
-/// ** template-set parsing does not account for plain [[[teasp]]] elements, it is unknown how the parser will react. (Probably poorly)
-/// 
+/// ** Should any elements changed by the mapping file require being placed as a child of a new element, the program only knows how to place adminNotes in adminGrps
 /// 
 /// </summary>
 
@@ -36,6 +27,8 @@ using Microsoft.Win32;
 
 namespace Csh_mt2tbx
 {
+    // This holds teasps that have one or more value groups. 
+
     public class extendedTeaspStorageManager
     {
         public List<string[]> valueGroupCollection; // Each string[] will correspond with the teasp in the same position
@@ -104,6 +97,8 @@ namespace Csh_mt2tbx
         }
 
     }
+
+    // This holds teasps that have no value groups, but do have substitutions
 
     public class teaspWithSub
     {
@@ -707,8 +702,6 @@ namespace Csh_mt2tbx
 
     }
 
-
-
     //////////
 
     // The orders are seperated into lists for each key that exists. This is the end of handling the Queue-draining orders
@@ -830,9 +823,6 @@ namespace Csh_mt2tbx
     }
 
     //////////
-
-
-
 
     // This is where the surface level JSON file is stored. The categorical mapping is parsed though the parseCMap method and the Queue-draining orders are parsed through the startQueue method
 
@@ -1511,14 +1501,48 @@ namespace Csh_mt2tbx
             }
         }
 
+        public static void printBoilerPlate(XmlWriter writer, string x, string d)
+        {
+            string langDeclaration = "xmllang";
+
+            writer.WriteStartElement("martif");
+            writer.WriteAttributeString("type", d); // Need to retrieve dialect from levelOneClass
+            writer.WriteAttributeString(langDeclaration, "en");
+
+            writer.WriteStartElement("martifHeader");
+            writer.WriteStartElement("fileDesc");
+            writer.WriteStartElement("sourceDesc");
+            writer.WriteStartElement("p");
+            writer.WriteString("Auto-converted from MultiTerm XML");
+
+            writer.WriteEndElement(); // Closes <p>
+
+            writer.WriteEndElement(); // Closes <sourceDesc>
+
+            writer.WriteEndElement(); // Closes <fileDesc>
+
+            writer.WriteStartElement("encodingDesc");
+            writer.WriteStartElement("p");
+            writer.WriteAttributeString("type", "DCSName");
+            writer.WriteString(x); // Need to retrieve XCS from levelOneClass
+
+            writer.WriteEndElement(); // Closes <p>
+
+            writer.WriteEndElement(); // Closes <encodingDesc>
+
+            writer.WriteEndElement(); // Closes <martifHeader>
+
+            writer.WriteStartElement("text");
+            writer.WriteStartElement("body");
+        }
+
         public static void startXMLImport(FileStream inXML, FileStream outXML, levelOneClass initialJSON)
         {
             XmlWriterSettings settingW = new XmlWriterSettings() { Indent = true, IndentChars = "\t" };
-            // We dont hope for a fragment, but I need this for debugging
             settingW.ConformanceLevel = ConformanceLevel.Auto;
             XmlReaderSettings settingsR = new XmlReaderSettings();
-            string d = initialJSON.getDialect(); // ****
-            string x = initialJSON.getXCS();    // ****
+            string d = initialJSON.getDialect();
+            string x = initialJSON.getXCS();    
             Dictionary<string, object> grandMasterD = new Dictionary<string, object>();
             grandMasterD = initialJSON.getMasterDictionary();
             string storeAttribute;
@@ -1565,53 +1589,19 @@ namespace Csh_mt2tbx
 
                                 if (reader.Name == "mtf")
                                 {
-
                                     // Print boiler-plate TBX header 
-                                    string langDeclaration = "xmllang";
-
-                                    writer.WriteStartElement("martif");
-                                    writer.WriteAttributeString("type", d); // Need to retrieve dialect from levelOneClass
-                                    writer.WriteAttributeString(langDeclaration, "en");
-
-                                    writer.WriteStartElement("martifHeader");
-                                    writer.WriteStartElement("fileDesc");
-                                    writer.WriteStartElement("sourceDesc");
-                                    writer.WriteStartElement("p");
-                                    writer.WriteString("Auto-converted from MultiTerm XML");
-
-                                    writer.WriteEndElement(); // Closes <p>
-
-                                    writer.WriteEndElement(); // Closes <sourceDesc>
-
-                                    writer.WriteEndElement(); // Closes <fileDesc>
-
-                                    writer.WriteStartElement("encodingDesc");
-                                    writer.WriteStartElement("p");
-                                    writer.WriteAttributeString("type", "DCSName");
-                                    writer.WriteString(x); // Need to retrieve XCS from levelOneClass
-
-                                    writer.WriteEndElement(); // Closes <p>
-
-                                    writer.WriteEndElement(); // Closes <encodingDesc>
-
-                                    writer.WriteEndElement(); // Closes <martifHeader>
-
-                                    writer.WriteStartElement("text");
-                                    writer.WriteStartElement("body");
-
-                                    // End boiler-plate TBX header
-
+                                    printBoilerPlate(writer, x, d);
                                     break;
 
-                                }  // Good
+                                }  // Complete, Acceptable Cyclomatic Complexity
 
                                 if (reader.HasAttributes && reader.GetAttribute("multimedia") != null && reader.Name == "descripGrp")
                                 {
                                     writer.WriteStartElement(reader.Name);
                                     break;
-                                } // Probably Good
+                                } // Complete, Acceptable Cyclomatic Complexity
 
-                                if (reader.Name == "language")
+                                if (reader.Name == "language") 
                                 {
                                     XmlNode f = doc.ReadNode(reader);
 
@@ -1633,7 +1623,7 @@ namespace Csh_mt2tbx
                                     }
 
                                     break;
-                                } // Probably good
+                                }  // Complete, Acceptable Cyclomatic Complexity
 
                                 if (reader.Name != "mtf" && reader.Name != "transac" && reader.HasAttributes && reader.GetAttribute("type") != null) // We have found a winner!
                                 {
@@ -1665,7 +1655,6 @@ namespace Csh_mt2tbx
                                             string saveBadText = match.Groups[0].Value;
                                             currentContent = currentContent.Replace(saveBadText, "");
                                         }
-
 
                                         // Determine typeof and cast
 
@@ -1863,12 +1852,10 @@ namespace Csh_mt2tbx
                                                     writer.WriteEndElement();
                                                 }
                                             }
-
                                         }
-
                                     }
                                     break;
-                                }
+                                } // Complete, High Cyclomatic Complexity (Bad)
 
                                 if (reader.Name == "transacGrp") // Gotta hardcode this guy, doesnt appear in a JSON mapping file
                                 {
@@ -1908,36 +1895,29 @@ namespace Csh_mt2tbx
                                     }
 
                                     break;
-                                }  // Probably Good
+                                }  // Complete, Acceptable Cyclomatic Complexity
 
                                 if (reader.Name != "mtf" && !(reader.HasAttributes)) // Plain-Jane Element
                                 {
                                     writer.WriteStartElement(reader.Name);
-                                    // We used to write the element content, but that advances the parser so we'll do it later on now
                                     break;
-                                } // Probably Good
+                                } // Complete, Acceptable Cyclomatic Complexity
 
                                 break;
 
                             case XmlNodeType.EndElement:
-
                                 writer.WriteEndElement();
                                 break;
 
                             case XmlNodeType.Text:
                                 writer.WriteString(reader.Value);
-
                                 break;
 
-                                /*  case XmlNodeType.Whitespace:
-
-                                      break; */
                         }
                     }
 
                     // File has finished Reading, Close leftover tags from header
                     bool success = true;
-
                     while (success)
                     {
                         try
@@ -1952,7 +1932,6 @@ namespace Csh_mt2tbx
 
                     // Wrap it up!
                     writer.Close();
-
                 }
             }
         }
@@ -1995,8 +1974,6 @@ namespace Csh_mt2tbx
                         {
                             XmlNode deeper = g.ChildNodes[i]; // Made of the node of the current child, we need to look at its children
 
-
-
                             // NEW ADDITION: Scan for destructive Nodes
 
                             for (int y = 0; y < deeper.ChildNodes.Count; y++)  // As of right now the only encountered destructive nodes are: adminNote
@@ -2033,8 +2010,6 @@ namespace Csh_mt2tbx
                                     g.AppendChild(destructiveNode);
                                 }
                             }
-
-                            //
 
                             for (int j = 0; j < deeper.ChildNodes.Count; j++)
                             {
@@ -2319,7 +2294,7 @@ namespace Csh_mt2tbx
 
         }
 
-        public static string readFile(string type) // Start Here
+        public static string readFile(string type) // Cyclic 
         {
             string fn = "";
 
